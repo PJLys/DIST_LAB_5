@@ -1,4 +1,4 @@
-package dist.group2.NamingServer;
+package dist.group2.Naming;
 
 import org.springframework.web.client.RestTemplate;
 

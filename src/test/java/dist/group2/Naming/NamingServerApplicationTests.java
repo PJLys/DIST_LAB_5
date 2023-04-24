@@ -1,4 +1,4 @@
-package dist.group2.NamingServer;
+package dist.group2.Naming;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
