@@ -44,6 +44,9 @@ public class ClientApplication {
 	private static ApplicationContext context;
 	UnicastReceivingChannelAdapter adapter;
 
+	// Replication parameters
+	private int serverUnicastPort;
+
 	public static void main(String[] args) {
 		addFiles();
 		// Run Client
@@ -67,6 +70,9 @@ public class ClientApplication {
 		nextID = hashValue(name);
 
 		System.out.println("<---> " + name + " Instantiated with IP " + IPAddress + " <--->");
+		addFiles();
+		sleep(100);
+
 		bootstrap();
 	}
 
@@ -76,19 +82,25 @@ public class ClientApplication {
 	// Create files to store on this node
 	public void addFiles() throws IOException {
 		// Path to store the files in
-		String filePath = new File("").getAbsolutePath();
-		filePath.concat("path to the property file");
+		String path = new File("").getAbsolutePath().concat("\\src\\files");
 
-		ArrayList fileNames = new ArrayList<>(name + "_1", name + "_2", name + "_3");
+		// Create 3 file names to add
+		ArrayList<String> fileNames = new ArrayList<>();
+		fileNames.add(name + "_1");
+		fileNames.add(name + "_2");
+		fileNames.add(name + "_3");
+
+		// Create the files
+		String str = "Text";
+		BufferedWriter writer = null;
 		for (String fileName : fileNames) {
-			String str = "Hello";
-			BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+			writer = new BufferedWriter(new FileWriter(path + "\\" + fileName));
 			writer.write(str);
 		}
 
 		writer.close();
 	}
-	public List verifyLocalFiles() {      //
+	public List verifyLocalFiles(){      //get's the list of files
 		List<String> localfiles = new ArrayList<String>();
 		File[] files = new File("/path/to/the/directory").listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
 		for (File file : files) {
@@ -132,7 +144,6 @@ public class ClientApplication {
 		}
 	}
 
-	
 
 	// -----------------------------------------------------------------------------------------------------------------
 	//                                       BOOTSTRAP, SHUTDOWN & FAILURE
