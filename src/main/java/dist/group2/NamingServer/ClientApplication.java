@@ -71,6 +71,7 @@ public class ClientApplication {
 
 		sleep(100);
 		bootstrap();
+		replicateFiles();
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
@@ -78,9 +79,6 @@ public class ClientApplication {
 	// -----------------------------------------------------------------------------------------------------------------
 	// Create files to store on this node
 	public void addFiles() throws IOException {
-		// Path to store the files in
-		String path = folder_path.toString();
-
 		// Create 3 file names to add
 		ArrayList<String> fileNames = new ArrayList<>();
 		fileNames.add(name + "_1");
@@ -94,11 +92,10 @@ public class ClientApplication {
 			writer = new BufferedWriter(new FileWriter(folder_path.toString() + "\\" + fileName));
 			writer.write(str);
 		}
-
 		writer.close();
 	}
 
-	public List<String> replicateFiles(){      //get's the list of files
+	public List<String> replicateFiles() {
 		List<String> localFiles = new ArrayList<>();
 		File[] files = new File(folder_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
 		for (File file : files) {
@@ -115,10 +112,43 @@ public class ClientApplication {
 		System.out.println("Received location reply from server - " + fileName + " is located at " + fileLocation);
 		System.out.println("Send file to " + fileLocation);
 
-		//
+		// Read the file to send
+		File fileToSend = new File("file_to_send.txt");
+		FileInputStream fileInputStream = new FileInputStream(fileToSend);
+		byte[] fileBytes = new byte[(int) fileToSend.length()];
+		fileInputStream.read(fileBytes);
+
+		// Send the file
+		OutputStream outputStream = socket.getOutputStream();
+		outputStream.write(fileBytes);
+
+		// Close resources
+		fileInputStream.close();
+		outputStream.close();
+		socket.close();
 	}
 
+	// ----------------------------------------- FILE UNICAST RECEIVER -------------------------------------------------
+	@Bean
+	public UnicastReceivingChannelAdapter serverUnicastReceiver() {
+		adapter = new UnicastReceivingChannelAdapter(unicastPort);
+		adapter.setOutputChannelName("FileUnicast");
+		return adapter;
+	}
 
+	@ServiceActivator(inputChannel = "FileUnicast")
+	public void serverUnicastEvent(Message<byte[]> message) {
+		byte[] payload = message.getPayload();
+		DatagramPacket dataPacket = new DatagramPacket(payload, payload.length);
+
+		String RxData = new String(dataPacket.getData(), 0, dataPacket.getLength());
+		System.out.println("Received file through unicast : " + RxData);
+
+		File file = (RxData.split("\\|")[0]);
+
+		String fileName = ;
+		System.out.println("Replicated file " + fileName);
+	}
 
 
 	// -----------------------------------------------------------------------------------------------------------------
