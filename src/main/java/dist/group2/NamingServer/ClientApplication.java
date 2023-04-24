@@ -42,12 +42,13 @@ public class ClientApplication {
 	private int nextID;
 	private boolean shuttingDown=false;
 	private MulticastSocket multicastSocket=new MulticastSocket();
-
 	private static ApplicationContext context;
 	UnicastReceivingChannelAdapter adapter;
 
+	// Replication parameters
+	private int serverUnicastPort;
+
 	public static void main(String[] args) {
-		addFiles();
 		// Run Client
 		context = SpringApplication.run(ClientApplication.class, args);
 	}
@@ -69,6 +70,9 @@ public class ClientApplication {
 		nextID = hashValue(name);
 
 		System.out.println("<---> " + name + " Instantiated with IP " + IPAddress + " <--->");
+		addFiles();
+		sleep(100);
+
 		bootstrap();
 	}
 
@@ -78,19 +82,25 @@ public class ClientApplication {
 	// Create files to store on this node
 	public void addFiles() throws IOException {
 		// Path to store the files in
-		String filePath = new File("").getAbsolutePath();
-		filePath.concat("path to the property file");
+		String path = new File("").getAbsolutePath().concat("\\src\\files");
 
-		ArrayList fileNames = new ArrayList<>(name + "_1", name + "_2", name + "_3");
+		// Create 3 file names to add
+		ArrayList<String> fileNames = new ArrayList<>();
+		fileNames.add(name + "_1");
+		fileNames.add(name + "_2");
+		fileNames.add(name + "_3");
+
+		// Create the files
+		String str = "Text";
+		BufferedWriter writer = null;
 		for (String fileName : fileNames) {
-			String str = "Hello";
-			BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+			writer = new BufferedWriter(new FileWriter(path + "\\" + fileName));
 			writer.write(str);
 		}
-
 		writer.close();
 	}
-	public List verifyLocalFiles(){      //get's the list of files
+
+	public List verifyLocalFiles(){      // get's the list of files
 		List<String> results = new ArrayList<String>();
 		File[] files = new File("/path/to/the/directory").listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
 		for (File file : files) {
@@ -126,19 +136,6 @@ public class ClientApplication {
 				previousID = hashValue(name); 	// Set previousID to its own ID
 				nextID = hashValue(name); 		// Set nextID to its own ID
 				System.out.println("<---> Other nodes present: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-
-				/* String previousOrNext;
-				int counter = 0;
-				int newID;
-
-				while (counter < 2) {
-					System.out.println("Waiting for response from - Other Nodes");
-					RxData = receiveUnicast(4448);
-					newID = Integer.parseInt(RxData.split("\\|")[0]);
-					previousOrNext = RxData.split("\\|")[1];
-					System.out.println("Received answer to multicast from other node - Set " + previousOrNext + " to " + newID);
-					counter++;
-				} */
 			}
 
 			// Set the baseURL for further communication with the naming server
