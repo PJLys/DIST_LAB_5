@@ -47,6 +47,8 @@ public class ClientApplication {
 
 	// Replication parameters
 	private int serverUnicastPort = 4451;
+	private String filePath = new File("").getAbsolutePath().concat("\\src\\files");
+
 
 	public static void main(String[] args) {
 		// Run Client
@@ -58,6 +60,7 @@ public class ClientApplication {
 		addFiles();
 		sleep(100);
 		bootstrap();
+		replicateFiles();
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
@@ -65,9 +68,6 @@ public class ClientApplication {
 	// -----------------------------------------------------------------------------------------------------------------
 	// Create files to store on this node
 	public void addFiles() throws IOException {
-		// Path to store the files in
-		String path = new File("").getAbsolutePath().concat("\\src\\files");
-
 		// Create 3 file names to add
 		ArrayList<String> fileNames = new ArrayList<>();
 		fileNames.add(name + "_1");
@@ -78,61 +78,33 @@ public class ClientApplication {
 		String str = "Text";
 		BufferedWriter writer = null;
 		for (String fileName : fileNames) {
-			writer = new BufferedWriter(new FileWriter(path + "\\" + fileName));
+			writer = new BufferedWriter(new FileWriter(filePath + "\\" + fileName));
 			writer.write(str);
 		}
-
 		writer.close();
 	}
-	public List verifyLocalFiles(){      //get's the list of files
-		List<String> localfiles = new ArrayList<String>();
-		File[] files = new File("/path/to/the/directory").listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
+
+	public List<String> replicateFiles(){      //get's the list of files
+		List<String> localFiles = new ArrayList<>();
+		File[] files = new File(filePath).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
 		for (File file : files) {
 			if (file.isFile()) {
-				localfiles.add(file.getName());
+				String fileName = file.getName();
+				sendFile(fileName);
 			}
 		}
-		calculateFileHashes();
-		return localfiles;
-	}
-	public List calculateFileHashes() {
-		List<String> verifiedlocalfiles = verifyLocalFiles();
-		List<Integer> hashedfiles = new ArrayList<Integer>();
-		for (String fileName : verifiedlocalfiles) {
-			hashedfiles.add(hashValue(fileName));
-		}
-		return hashedfiles;
-	}
-	public void sendHashList(String serverAddress, int serverPort, List<Integer> hashList) {
-		try {
-			// create a socket to connect to the server
-			Socket socket = new Socket(serverAddress, serverPort);
-
-			// create a data output stream to send the hash list to the server
-			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-
-			// send the number of hash values in the list
-			out.writeInt(hashList.size());
-
-			// send each hash value in the list
-			for (int i = 0; i < hashList.size(); i++) {
-				out.writeInt(hashList.get(i));
-			}
-
-			// close the socket and output stream
-			out.close();
-			socket.close();
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		return localFiles;
 	}
 	
 	public void sendFile(String fileName) {	// Send file to replicated node
 		String fileLocation = findFile(fileName);
 		System.out.println("Received location reply from server - " + fileName + " is located at " + fileLocation);
 		System.out.println("Send file to " + fileLocation);
+
+		//
 	}
+
+	// ----------------------------------------------------------------------------------------------
 	@Bean
 	public UnicastReceivingChannelAdapter serverUnicastReceiver() {
 		adapter = new UnicastReceivingChannelAdapter(unicastPort);
@@ -179,19 +151,6 @@ public class ClientApplication {
 				previousID = hashValue(name); 	// Set previousID to its own ID
 				nextID = hashValue(name); 		// Set nextID to its own ID
 				System.out.println("<---> Other nodes present: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-
-				/* String previousOrNext;
-				int counter = 0;
-				int newID;
-
-				while (counter < 2) {
-					System.out.println("Waiting for response from - Other Nodes");
-					RxData = receiveUnicast(4448);
-					newID = Integer.parseInt(RxData.split("\\|")[0]);
-					previousOrNext = RxData.split("\\|")[1];
-					System.out.println("Received answer to multicast from other node - Set " + previousOrNext + " to " + newID);
-					counter++;
-				} */
 			}
 
 			// Set the baseURL for further communication with the naming server
