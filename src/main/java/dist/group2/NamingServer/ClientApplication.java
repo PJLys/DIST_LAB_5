@@ -13,13 +13,14 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.client.RestTemplate;
-
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
 
 @SpringBootApplication
 public class ClientApplication {
@@ -73,11 +74,17 @@ public class ClientApplication {
 	//                                    		  LAB 5 - Replication
 	// -----------------------------------------------------------------------------------------------------------------
 	// Create files to store on this node
-	public void whenWriteStringUsingBufferedWritter_thenCorrect()
-			throws IOException {
-		String str = "Hello";
-		BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
-		writer.write(str);
+	public void addFiles() throws IOException {
+		// Path to store the files in
+		String filePath = new File("").getAbsolutePath();
+		filePath.concat("path to the property file");
+
+		ArrayList fileNames = new ArrayList<>(name + "_1", name + "_2", name + "_3");
+		for (String fileName : fileNames) {
+			String str = "Hello";
+			BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+			writer.write(str);
+		}
 
 		writer.close();
 	}
