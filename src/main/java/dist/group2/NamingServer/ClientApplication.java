@@ -3,6 +3,7 @@ package dist.group2.NamingServer;
 import jakarta.annotation.PreDestroy;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jdk.jshell.spi.ExecutionControl;
+import org.hibernate.cfg.NotYetImplementedException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
@@ -493,6 +494,37 @@ public class ClientApplication {
 			System.out.println("<" + this.name + "> - ERROR - Failed to find IPAddress of node with ID " + nodeID + " - " + e);
 			failure();
 			return "NotFound";
+		}
+	}
+
+	private void run() {
+		while (true) {
+			WatchKey k;
+			try {
+				k = file_daemon.take();
+			} catch (InterruptedException e) {
+				return;
+			}
+
+			for (WatchEvent<?> event : k.pollEvents()) {
+				WatchEvent.Kind<?> kind = event.kind();
+
+				if (kind == StandardWatchEventKinds.OVERFLOW) {
+					continue;
+				}
+
+				@SuppressWarnings("unchecked")
+				WatchEvent<Path> ev = (WatchEvent<Path>) event;
+				Path filename = ev.context();
+				Path child = folder_path.resolve(filename);
+
+				System.out.println(kind.name() + ": " + child);
+
+				throw new NotYetImplementedException("Notify replicator node!");
+			}
+
+			if (!k.reset())
+				break;
 		}
 	}
 }
