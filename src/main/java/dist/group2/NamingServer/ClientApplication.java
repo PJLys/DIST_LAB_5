@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.*;
 import java.util.HashMap;
@@ -42,6 +44,7 @@ public class ClientApplication {
 	UnicastReceivingChannelAdapter adapter;
 
 	public static void main(String[] args) {
+		addFiles();
 		// Run Client
 		context = SpringApplication.run(ClientApplication.class, args);
 	}
@@ -64,6 +67,19 @@ public class ClientApplication {
 
 		System.out.println("<---> " + name + " Instantiated with IP " + IPAddress + " <--->");
 		bootstrap();
+	}
+
+	// -----------------------------------------------------------------------------------------------------------------
+	//                                    		  LAB 5 - Replication
+	// -----------------------------------------------------------------------------------------------------------------
+	// Create files to store on this node
+	public void whenWriteStringUsingBufferedWritter_thenCorrect()
+			throws IOException {
+		String str = "Hello";
+		BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+		writer.write(str);
+
+		writer.close();
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
