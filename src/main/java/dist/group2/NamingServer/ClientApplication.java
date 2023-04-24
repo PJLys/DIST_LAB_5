@@ -84,7 +84,7 @@ public class ClientApplication {
 
 		writer.close();
 	}
-	public List verifyLocalFiles(){
+	public List verifyLocalFiles(){      //get's the list of files
 		List<String> results = new ArrayList<String>();
 		File[] files = new File("/path/to/the/directory").listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
 		for (File file : files) {
@@ -94,6 +94,7 @@ public class ClientApplication {
 		}
 		return results;
 	}
+
 
 	// -----------------------------------------------------------------------------------------------------------------
 	//                                       BOOTSTRAP, SHUTDOWN & FAILURE
