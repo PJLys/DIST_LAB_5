@@ -1,6 +1,8 @@
 package dist.group2.NamingServer;
 
 import jakarta.annotation.PreDestroy;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jdk.jshell.spi.ExecutionControl;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
@@ -12,10 +14,12 @@ import org.springframework.messaging.Message;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
 import java.net.*;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,13 +50,16 @@ public class ClientApplication {
 
 	// Replication parameters
 	private int serverUnicastPort;
+	private Path folder_path; //Stores the local files that need to be replicated
+	private WatchService file_daemon = FileSystems.getDefault().newWatchService();
+
 
 	public static void main(String[] args) {
 		// Run Client
 		context = SpringApplication.run(ClientApplication.class, args);
 	}
 
-	public ClientApplication() throws IOException {
+	public ClientApplication() throws IOException, ExecutionControl.NotImplementedException {
 		name = InetAddress.getLocalHost().getHostName();
 		IPAddress = InetAddress.getLocalHost().getHostAddress();
 		namingPort = 8080;
@@ -69,19 +76,48 @@ public class ClientApplication {
 		nextID = hashValue(name);
 
 		System.out.println("<---> " + name + " Instantiated with IP " + IPAddress + " <--->");
-		addFiles();
+		folder_path = Path.of(new File("").getAbsolutePath().concat("\\src\\files"));
+		addFiles(folder_path);
+		folder_path.register(file_daemon,
+				StandardWatchEventKinds.ENTRY_CREATE,
+				StandardWatchEventKinds.ENTRY_MODIFY,
+				StandardWatchEventKinds.ENTRY_DELETE);
+
 		sleep(100);
 
 		bootstrap();
+
+		while (true) {
+			WatchKey k;
+			try {
+				k = file_daemon.take();
+			} catch (InterruptedException e) {
+				return;
+			}
+
+			for (WatchEvent<?> event : k.pollEvents()) {
+				WatchEvent.Kind<?> kind = event.kind();
+				if (kind == StandardWatchEventKinds.OVERFLOW)
+					continue;
+
+				@SuppressWarnings("unchecked")
+				WatchEvent<Path> ev = (WatchEvent<Path>) event;
+				Path filename = ev.context();
+				Path child = folder_path.resolve(filename);
+
+				throw new ExecutionControl.NotImplementedException("Not implemented replicator notification");
+			}
+		}
+
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
 	//                                    		  LAB 5 - Replication
 	// -----------------------------------------------------------------------------------------------------------------
 	// Create files to store on this node
-	public void addFiles() throws IOException {
+	public void addFiles(Path path_to_folder) throws IOException {
 		// Path to store the files in
-		String path = new File("").getAbsolutePath().concat("\\src\\files");
+		String path = path_to_folder.toString();
 
 		// Create 3 file names to add
 		ArrayList<String> fileNames = new ArrayList<>();
