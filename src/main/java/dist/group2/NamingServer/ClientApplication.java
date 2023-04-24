@@ -1,6 +1,8 @@
 package dist.group2.NamingServer;
 
 import jakarta.annotation.PreDestroy;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jdk.jshell.spi.ExecutionControl;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
@@ -12,10 +14,12 @@ import org.springframework.messaging.Message;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
 import java.net.*;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,7 +51,9 @@ public class ClientApplication {
 
 	// Replication parameters
 	private int serverUnicastPort = 4451;
-	private String filePath = new File("").getAbsolutePath().concat("\\src\\files");
+	private Path folder_path = Path.of(new File("").getAbsolutePath().concat("\\src\\files"));
+	//Stores the local files that need to be replicated
+	private WatchService file_daemon = FileSystems.getDefault().newWatchService();
 
 
 	public static void main(String[] args) {
@@ -58,9 +64,13 @@ public class ClientApplication {
 	public ClientApplication() throws IOException {
 		System.out.println("<---> " + name + " Instantiated with IP " + IPAddress + " <--->");
 		addFiles();
+		folder_path.register(file_daemon,
+				StandardWatchEventKinds.ENTRY_CREATE,
+				StandardWatchEventKinds.ENTRY_MODIFY,
+				StandardWatchEventKinds.ENTRY_DELETE);
+
 		sleep(100);
 		bootstrap();
-		replicateFiles();
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
@@ -68,6 +78,9 @@ public class ClientApplication {
 	// -----------------------------------------------------------------------------------------------------------------
 	// Create files to store on this node
 	public void addFiles() throws IOException {
+		// Path to store the files in
+		String path = folder_path.toString();
+
 		// Create 3 file names to add
 		ArrayList<String> fileNames = new ArrayList<>();
 		fileNames.add(name + "_1");
@@ -81,12 +94,13 @@ public class ClientApplication {
 			writer = new BufferedWriter(new FileWriter(filePath + "\\" + fileName));
 			writer.write(str);
 		}
+
 		writer.close();
 	}
 
 	public List<String> replicateFiles(){      //get's the list of files
 		List<String> localFiles = new ArrayList<>();
-		File[] files = new File(filePath).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
+		File[] files = new File(folder_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
 		for (File file : files) {
 			if (file.isFile()) {
 				String fileName = file.getName();
