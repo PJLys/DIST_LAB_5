@@ -91,7 +91,7 @@ public class ClientApplication {
 		String str = "Text";
 		BufferedWriter writer = null;
 		for (String fileName : fileNames) {
-			writer = new BufferedWriter(new FileWriter(filePath + "\\" + fileName));
+			writer = new BufferedWriter(new FileWriter(folder_path.toString() + "\\" + fileName));
 			writer.write(str);
 		}
 
@@ -118,27 +118,7 @@ public class ClientApplication {
 		//
 	}
 
-	// ----------------------------------------------------------------------------------------------
-	@Bean
-	public UnicastReceivingChannelAdapter serverUnicastReceiver() {
-		adapter = new UnicastReceivingChannelAdapter(unicastPort);
-		adapter.setOutputChannelName("ServerUnicast");
-		return adapter;
-	}
 
-	@ServiceActivator(inputChannel = "ServerUnicast")
-	public void serverUnicastEvent(Message<byte[]> message) {
-		byte[] payload = message.getPayload();
-		DatagramPacket dataPacket = new DatagramPacket(payload, payload.length);
-
-		String RxData = new String(dataPacket.getData(), 0, dataPacket.getLength());
-		System.out.println("Received unicast reply from server with : " + RxData);
-
-		int currentID = Integer.parseInt(RxData.split("\\|")[0]);
-
-
-		System.out.println("Send file to " + );
-	}
 
 
 	// -----------------------------------------------------------------------------------------------------------------
