@@ -13,10 +13,8 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.client.RestTemplate;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+
+import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,6 +37,7 @@ public class ClientApplication {
 	private int unicastPort= 4449;
 	private boolean shuttingDown=false;
 	private MulticastSocket multicastSocket=new MulticastSocket();
+
 	private static ApplicationContext context;
 	UnicastReceivingChannelAdapter adapter;
 
@@ -82,18 +81,51 @@ public class ClientApplication {
 			writer = new BufferedWriter(new FileWriter(path + "\\" + fileName));
 			writer.write(str);
 		}
+
 		writer.close();
 	}
-
-	public List verifyLocalFiles(){      // get's the list of files
-		List<String> results = new ArrayList<String>();
+	public List verifyLocalFiles(){      //get's the list of files
+		List<String> localfiles = new ArrayList<String>();
 		File[] files = new File("/path/to/the/directory").listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
 		for (File file : files) {
 			if (file.isFile()) {
-				results.add(file.getName());
+				localfiles.add(file.getName());
 			}
 		}
-		return results;
+		calculateFileHashes();
+		return localfiles;
+	}
+	public List calculateFileHashes() {
+		List<String> verifiedlocalfiles = verifyLocalFiles();
+		List<Integer> hashedfiles = new ArrayList<Integer>();
+		for (String fileName : verifiedlocalfiles) {
+			hashedfiles.add(hashValue(fileName));
+		}
+		return hashedfiles;
+	}
+	public void sendHashList(String serverAddress, int serverPort, List<Integer> hashList) {
+		try {
+			// create a socket to connect to the server
+			Socket socket = new Socket(serverAddress, serverPort);
+
+			// create a data output stream to send the hash list to the server
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+			// send the number of hash values in the list
+			out.writeInt(hashList.size());
+
+			// send each hash value in the list
+			for (int i = 0; i < hashList.size(); i++) {
+				out.writeInt(hashList.get(i));
+			}
+
+			// close the socket and output stream
+			out.close();
+			socket.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void sendFile(String fileName) {	// Send file to replicated node
@@ -147,6 +179,19 @@ public class ClientApplication {
 				previousID = hashValue(name); 	// Set previousID to its own ID
 				nextID = hashValue(name); 		// Set nextID to its own ID
 				System.out.println("<---> Other nodes present: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
+
+				/* String previousOrNext;
+				int counter = 0;
+				int newID;
+
+				while (counter < 2) {
+					System.out.println("Waiting for response from - Other Nodes");
+					RxData = receiveUnicast(4448);
+					newID = Integer.parseInt(RxData.split("\\|")[0]);
+					previousOrNext = RxData.split("\\|")[1];
+					System.out.println("Received answer to multicast from other node - Set " + previousOrNext + " to " + newID);
+					counter++;
+				} */
 			}
 
 			// Set the baseURL for further communication with the naming server
