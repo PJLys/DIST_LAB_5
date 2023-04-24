@@ -15,10 +15,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @SpringBootApplication
@@ -80,6 +83,16 @@ public class ClientApplication {
 		writer.write(str);
 
 		writer.close();
+	}
+	public List verifyLocalFiles(){
+		List<String> results = new ArrayList<String>();
+		File[] files = new File("/path/to/the/directory").listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
+		for (File file : files) {
+			if (file.isFile()) {
+				results.add(file.getName());
+			}
+		}
+		return results;
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
