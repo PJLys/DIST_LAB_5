@@ -28,28 +28,29 @@ import java.util.Map;
 
 @SpringBootApplication
 public class ClientApplication {
-	private final String name;
-	private final String IPAddress;
-	private final int namingPort;
-	private final RestTemplate restTemplate;
+	private final String name = InetAddress.getLocalHost().getHostName();;
+	private final String IPAddress = InetAddress.getLocalHost().getHostAddress();
+	private final int namingPort = 8080;
+	private final RestTemplate restTemplate = new RestTemplate();
 	private String baseUrl;
 
 	// Discovery Parameters
 	private String namingServerIP;
-	private String multicastIP;
-	private InetAddress multicastGroup;
-	private int multicastPort;
-	private int unicastPort;
-	private int previousID;
-	private int nextID;
+	private String multicastIP = "224.0.0.5";
+	private final int multicastPort = 4446;
+	private int unicastPort= 4449;
 	private boolean shuttingDown=false;
 	private MulticastSocket multicastSocket=new MulticastSocket();
 
 	private static ApplicationContext context;
 	UnicastReceivingChannelAdapter adapter;
 
+	// Set previous & next ID to itself (even if there are other nodes, the IDs will be updated later on)
+	private int previousID = hashValue(name);
+	private int nextID = hashValue(name);
+
 	// Replication parameters
-	private int serverUnicastPort;
+	private int serverUnicastPort = 4451;
 	private Path folder_path; //Stores the local files that need to be replicated
 	private WatchService file_daemon = FileSystems.getDefault().newWatchService();
 
@@ -59,22 +60,7 @@ public class ClientApplication {
 		context = SpringApplication.run(ClientApplication.class, args);
 	}
 
-	public ClientApplication() throws IOException, ExecutionControl.NotImplementedException {
-		name = InetAddress.getLocalHost().getHostName();
-		IPAddress = InetAddress.getLocalHost().getHostAddress();
-		namingPort = 8080;
-		restTemplate = new RestTemplate();
-
-		// Choose a random IP in the 224.0.0.0 to 239.255.255.255 range (reserved for multicast)
-		multicastIP = "224.0.0.5";
-		multicastGroup = InetAddress.getByName(multicastIP);
-		multicastPort = 4446;
-		unicastPort = 4449;
-
-		// Set previous & next ID to itself (even if there are other nodes, the IDs will be updated later on)
-		previousID = hashValue(name);
-		nextID = hashValue(name);
-
+	public ClientApplication() throws IOException {
 		System.out.println("<---> " + name + " Instantiated with IP " + IPAddress + " <--->");
 		folder_path = Path.of(new File("").getAbsolutePath().concat("\\src\\files"));
 		addFiles(folder_path);
@@ -115,9 +101,9 @@ public class ClientApplication {
 	//                                    		  LAB 5 - Replication
 	// -----------------------------------------------------------------------------------------------------------------
 	// Create files to store on this node
-	public void addFiles(Path path_to_folder) throws IOException {
+	public void addFiles() throws IOException {
 		// Path to store the files in
-		String path = path_to_folder.toString();
+		String path = new File("").getAbsolutePath().concat("\\src\\files");
 
 		// Create 3 file names to add
 		ArrayList<String> fileNames = new ArrayList<>();
