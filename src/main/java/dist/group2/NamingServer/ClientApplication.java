@@ -48,7 +48,6 @@ public class ClientApplication {
 	private int serverUnicastPort;
 
 	public static void main(String[] args) {
-		addFiles();
 		// Run Client
 		context = SpringApplication.run(ClientApplication.class, args);
 	}
@@ -128,11 +127,11 @@ public class ClientApplication {
 			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
 			// send the number of hash values in the list
-			out.writeInt(hashList.length);
+			out.writeInt(hashList.size());
 
 			// send each hash value in the list
-			for (int i = 0; i < hashList.length; i++) {
-				out.writeInt(hashList[i]);
+			for (int i = 0; i < hashList.size(); i++) {
+				out.writeInt(hashList.get(i));
 			}
 
 			// close the socket and output stream
