@@ -13,10 +13,8 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.client.RestTemplate;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+
+import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -90,17 +88,51 @@ public class ClientApplication {
 
 		writer.close();
 	}
-	public List verifyLocalFiles(){      //get's the list of files
-		List<String> results = new ArrayList<String>();
+	public List verifyLocalFiles() {      //
+		List<String> localfiles = new ArrayList<String>();
 		File[] files = new File("/path/to/the/directory").listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
 		for (File file : files) {
 			if (file.isFile()) {
-				results.add(file.getName());
+				localfiles.add(file.getName());
 			}
 		}
-		return results;
+		calculateFileHashes();
+		return localfiles;
+	}
+	public List calculateFileHashes() {
+		List<String> verifiedlocalfiles = verifyLocalFiles();
+		List<Integer> hashedfiles = new ArrayList<Integer>();
+		for (String fileName : verifiedlocalfiles) {
+			hashedfiles.add(hashValue(fileName));
+		}
+		return hashedfiles;
+	}
+	public void sendHashList(String serverAddress, int serverPort, List<Integer> hashList) {
+		try {
+			// create a socket to connect to the server
+			Socket socket = new Socket(serverAddress, serverPort);
+
+			// create a data output stream to send the hash list to the server
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+			// send the number of hash values in the list
+			out.writeInt(hashList.length);
+
+			// send each hash value in the list
+			for (int i = 0; i < hashList.length; i++) {
+				out.writeInt(hashList[i]);
+			}
+
+			// close the socket and output stream
+			out.close();
+			socket.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
+	
 
 	// -----------------------------------------------------------------------------------------------------------------
 	//                                       BOOTSTRAP, SHUTDOWN & FAILURE
