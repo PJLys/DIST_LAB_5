@@ -139,16 +139,15 @@ public class ClientApplication {
 
 	@ServiceActivator(inputChannel = "FileUnicast")
 	public void serverUnicastEvent(Message<byte[]> message) {
-		byte[] payload = message.getPayload();
-		DatagramPacket dataPacket = new DatagramPacket(payload, payload.length);
-
-		String RxData = new String(dataPacket.getData(), 0, dataPacket.getLength());
-		System.out.println("Received file through unicast : " + RxData);
-
-		File file = (RxData.split("\\|")[0]);
-
-		String fileName = ;
-		System.out.println("Replicated file " + fileName);
+		try {
+			byte[] payload = message.getPayload();
+			FileOutputStream outputStream = new FileOutputStream("file.txt", true); // true for append mode
+			outputStream.write(payload);
+			outputStream.close();
+			System.out.println("Bytes appended to file successfully.");
+		} catch (IOException e) {
+			System.out.println("Error appending bytes to file: " + e.getMessage());
+		}
 	}
 
 
