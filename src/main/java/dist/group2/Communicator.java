@@ -31,13 +31,18 @@ public class Communicator {
         // Prepare receiving socket
         byte[] RxBuffer = new byte[256];
         DatagramSocket socket = new DatagramSocket(port);
+        System.out.println("Created datagramsocket");
         // Prepare receiving packet
         DatagramPacket dataPacket = new DatagramPacket(RxBuffer, RxBuffer.length);
+        System.out.println("Created datapacket");
         // Wait to receive & close socket
         socket.receive(dataPacket);
+        System.out.println("received datagramsocket");
         socket.close();
+        System.out.println("closed socket");
         // Read data from dataPacket
         String RxData = new String(dataPacket.getData(), 0, dataPacket.getLength());
+        System.out.println("made strings");
         return RxData;
     }
 
