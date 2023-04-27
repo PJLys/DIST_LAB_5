@@ -45,7 +45,6 @@ public class ClientApplication {
 	private MulticastSocket multicastSocket=new MulticastSocket();
 
 	private static ApplicationContext context;
-	UnicastReceivingChannelAdapter adapter;
 
 	// Set previous & next ID to itself (even if there are other nodes, the IDs will be updated later on)
 	private int previousID = hashValue(name);
@@ -53,7 +52,6 @@ public class ClientApplication {
 
 	// Replication parameters
 	private int fileUnicastPort = 4451;
-	UnicastReceivingChannelAdapter fileAdapter;
 	private Path folder_path = Path.of(new File("").getAbsolutePath().concat("\\src\\files"));
 	//Stores the local files that need to be replicated
 	private WatchService file_daemon = FileSystems.getDefault().newWatchService();
@@ -154,9 +152,9 @@ public class ClientApplication {
 	// ----------------------------------------- FILE UNICAST RECEIVER -------------------------------------------------
 	@Bean
 	public UnicastReceivingChannelAdapter serverUnicastReceiver() {
-		fileAdapter = new UnicastReceivingChannelAdapter(fileUnicastPort);
-		fileAdapter.setOutputChannelName("FileUnicast");
-		return fileAdapter;
+		UnicastReceivingChannelAdapter adapter = new UnicastReceivingChannelAdapter(fileUnicastPort);
+		adapter.setOutputChannelName("FileUnicast");
+		return adapter;
 	}
 
 	@ServiceActivator(inputChannel = "FileUnicast")
@@ -338,7 +336,7 @@ public class ClientApplication {
 	// -----------------------------------------------------------------------------------------------------------------
 	@Bean
 	public UnicastReceivingChannelAdapter unicastReceiver() {
-		adapter = new UnicastReceivingChannelAdapter(unicastPort);
+		UnicastReceivingChannelAdapter adapter = new UnicastReceivingChannelAdapter(unicastPort);
 		adapter.setOutputChannelName("Unicast");
 		return adapter;
 	}
