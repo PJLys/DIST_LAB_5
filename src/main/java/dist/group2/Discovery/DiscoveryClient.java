@@ -14,10 +14,9 @@ public class DiscoveryClient {
     private static int nextID;
     private final String name;
     private final String IPAddress;
-    private String baseUrl;
     private final int namingPort;
-
     private final int unicastPort;
+    private String baseUrl;
     private boolean shuttingDown = false;
 
     public DiscoveryClient(String name, String IPAddress, int unicastPort, int namingPort) {
@@ -29,8 +28,7 @@ public class DiscoveryClient {
     }
 
     public static Integer hashValue(String name) {
-        Integer hash = Math.abs(name.hashCode()) % 32769;
-        return hash;
+        return Math.abs(name.hashCode()) % 32769;
     }
 
     public String getBaseUrl() {
@@ -65,7 +63,7 @@ public class DiscoveryClient {
     }
 
     @PreDestroy
-    public void shutdown() {
+    private void shutdown() {
         System.out.println("<---> " + this.name + " Shutdown <--->");
 
         // Set shuttingDown to true to avoid infinite failure loops
@@ -107,22 +105,14 @@ public class DiscoveryClient {
         NamingClient.deleteNode(name);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    //                                  DISCOVERY & BOOTSTRAP ASSISTANCE METHODS
-    // -----------------------------------------------------------------------------------------------------------------
-
-    public void failure() {
+    private void failure() {
         if (!shuttingDown) {
             System.out.println("<---> " + this.name + " Failure <--->");
             shutdown();
         }
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    //                                            MULTICAST LISTENER
-    // -----------------------------------------------------------------------------------------------------------------
-
-    public void compareIDs(String RxData) {
+    private void compareIDs(String RxData) {
         String newNodeName = RxData.split("\\|")[0];
         String newNodeIP = RxData.split("\\|")[1];
 
@@ -148,12 +138,8 @@ public class DiscoveryClient {
         }
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    //                                              UNICAST LISTENER
-    // -----------------------------------------------------------------------------------------------------------------
-
     @ServiceActivator(inputChannel = "Multicast")
-    public void multicastEvent(Message<byte[]> message) {
+    private void multicastEvent(Message<byte[]> message) {
         byte[] payload = message.getPayload();
         DatagramPacket dataPacket = new DatagramPacket(payload, payload.length);
 
@@ -165,7 +151,7 @@ public class DiscoveryClient {
     }
 
     @ServiceActivator(inputChannel = "DiscoveryUnicast")
-    public void unicastEvent(Message<byte[]> message) {
+    private void unicastEvent(Message<byte[]> message) {
         byte[] payload = message.getPayload();
         DatagramPacket dataPacket = new DatagramPacket(payload, payload.length);
 
@@ -174,23 +160,28 @@ public class DiscoveryClient {
 
         int currentID = Integer.parseInt(RxData.split("\\|")[0]);
         String previousOrNext = RxData.split("\\|")[1];
-        if (previousOrNext.equals("bothIDs")) {                // Transmitter becomes previous & next ID
-            previousID = currentID; // Set previous ID
-            nextID = currentID;
-            System.out.println("<---> previous & next IDs changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-        } else if (previousOrNext.equals("previousID")) {   // Transmitter becomes previous ID
-            previousID = currentID; // Set previous ID
-            System.out.println("<---> previousID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-        } else if (previousOrNext.equals("nextID")) {    // Transmitter becomes next ID
-            nextID = currentID;
-            System.out.println("<---> nextID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-        } else {
-            System.out.println("<" + this.name + "> - ERROR - Unicast received 2nd parameter other than 'previousID' or 'nextID'");
-            failure();
+        switch (previousOrNext) {
+            case "bothIDs" -> {                 // Transmitter becomes previous & next ID
+                previousID = currentID; // Set previous ID
+                nextID = currentID;
+                System.out.println("<---> previous & next IDs changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
+            }
+            case "previousID" -> {    // Transmitter becomes previous ID
+                previousID = currentID; // Set previous ID
+                System.out.println("<---> previousID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
+            }
+            case "nextID" -> {     // Transmitter becomes next ID
+                nextID = currentID;
+                System.out.println("<---> nextID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
+            }
+            default -> {
+                System.out.println("<" + this.name + "> - ERROR - Unicast received 2nd parameter other than 'previousID' or 'nextID'");
+                failure();
+            }
         }
     }
 
-    public void respondToMulticast(String newNodeIP, int currentID, String previousOrNext) {
+    private void respondToMulticast(String newNodeIP, int currentID, String previousOrNext) {
         String message = currentID + "|" + previousOrNext;
         try {
             Communicator.sendUnicast(message, newNodeIP, unicastPort);
@@ -200,7 +191,7 @@ public class DiscoveryClient {
         }
     }
 
-    public void sleep(int time) {
+    private void sleep(int time) {
         try {
             Thread.sleep(time);
         } catch (InterruptedException e) {
