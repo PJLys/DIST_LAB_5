@@ -20,6 +20,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,7 +52,8 @@ public class ClientApplication {
 	private int nextID = hashValue(name);
 
 	// Replication parameters
-	private int serverUnicastPort = 4451;
+	private int fileUnicastPort = 4451;
+	UnicastReceivingChannelAdapter fileAdapter;
 	private Path folder_path = Path.of(new File("").getAbsolutePath().concat("\\src\\files"));
 	//Stores the local files that need to be replicated
 	private WatchService file_daemon = FileSystems.getDefault().newWatchService();
@@ -70,7 +72,7 @@ public class ClientApplication {
 				StandardWatchEventKinds.ENTRY_MODIFY,
 				StandardWatchEventKinds.ENTRY_DELETE);
 
-		sleep(100);
+		//sleep(10);
 		bootstrap();
 		replicateFiles();
 	}
@@ -88,15 +90,15 @@ public class ClientApplication {
 
 		// Create the files
 		String str = "Text";
-		BufferedWriter writer = null;
+		BufferedWriter writer;
 		for (String fileName : fileNames) {
 			writer = new BufferedWriter(new FileWriter(folder_path.toString() + "\\" + fileName));
 			writer.write(str);
+			writer.close();
 		}
-		writer.close();
 	}
 
-	public List<String> replicateFiles() {
+	public List<String> replicateFiles() throws IOException {
 		List<String> localFiles = new ArrayList<>();
 		File[] files = new File(folder_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
 		for (File file : files) {
@@ -108,33 +110,58 @@ public class ClientApplication {
 		return localFiles;
 	}
 	
-	public void sendFile(String fileName) {	// Send file to replicated node
-		String fileLocation = findFile(fileName);
-		System.out.println("Received location reply from server - " + fileName + " is located at " + fileLocation);
-		System.out.println("Send file to " + fileLocation);
+	public void sendFile(String fileName) throws IOException {	// Send file to replicated node
+		try {
+			String fileLocation = findFile(fileName);
+			System.out.println("Received location reply from server - " + fileName + " is located at " + fileLocation);
+			System.out.println("Send file to " + fileLocation);
 
-		// Read the file to send
-		File fileToSend = new File("file_to_send.txt");
-		FileInputStream fileInputStream = new FileInputStream(fileToSend);
-		byte[] fileBytes = new byte[(int) fileToSend.length()];
-		fileInputStream.read(fileBytes);
+			// Read the text from the file
+			Path path = Path.of(folder_path.toString() + "\\" + fileName);
+			//File file = new File(folder_path.toString() + "\\" + fileName);
+			//String fileData = file.toString();
+			byte[] Txbuffer = Files.readAllBytes(path);
+			//List<String> allLines = Files.readAllLines(path, StandardCharsets.UTF_8);
 
-		// Send the file
-		OutputStream outputStream = socket.getOutputStream();
-		outputStream.write(fileBytes);
+			// Prepare response packet
 
-		// Close resources
-		fileInputStream.close();
-		outputStream.close();
-		socket.close();
+			DatagramPacket packet = new DatagramPacket(Txbuffer, Txbuffer.length, InetAddress.getByName(fileLocation), fileUnicastPort);
+
+			// Create socket on the unicast port (without conflicting with UnicastListener which uses the same port)
+			fileAdapter.stop();
+			sleep(10);
+			DatagramSocket socket = null;
+
+			try {
+				// Acquire the lock before creating the DatagramSocket
+				socket = new DatagramSocket();
+			} catch (Exception e) {
+				System.out.println("Address already in use");
+				failure();
+			}
+
+			// Send response to the IP of the node on the unicast port
+			if (socket != null) {
+				socket.send(packet);
+				socket.close();
+				socket.disconnect();
+			}
+
+			sleep(10);
+			fileAdapter.start();
+		} catch (IOException e) {
+			System.out.println("<" + this.name + "> - ERROR - Failed to send unicast - " + e);
+			failure();
+			throw new IllegalStateException("Client has failed and should have been stopped by now");
+		}
 	}
 
 	// ----------------------------------------- FILE UNICAST RECEIVER -------------------------------------------------
 	@Bean
 	public UnicastReceivingChannelAdapter serverUnicastReceiver() {
-		adapter = new UnicastReceivingChannelAdapter(unicastPort);
-		adapter.setOutputChannelName("FileUnicast");
-		return adapter;
+		fileAdapter = new UnicastReceivingChannelAdapter(fileUnicastPort);
+		fileAdapter.setOutputChannelName("FileUnicast");
+		return fileAdapter;
 	}
 
 	@ServiceActivator(inputChannel = "FileUnicast")
@@ -150,7 +177,6 @@ public class ClientApplication {
 		String fileName = ;
 		System.out.println("Replicated file " + fileName);
 	}
-
 
 	// -----------------------------------------------------------------------------------------------------------------
 	//                                       BOOTSTRAP, SHUTDOWN & FAILURE
@@ -257,7 +283,7 @@ public class ClientApplication {
 		int newNodeID = hashValue(newNodeName);
 		int currentID = hashValue(name);
 
-		sleep(1000);    // Wait so the responses follow that of the naming server
+		sleep(200);    // Wait so the responses follow that of the naming server
 
 		if (currentID == nextID) {	// Test if this node is alone -> change previous and next ID to the new node
 			previousID = newNodeID;
@@ -271,7 +297,7 @@ public class ClientApplication {
 		} else if (currentID <= newNodeID && newNodeID <= nextID) {	// Test if the new node should become the nextID of the new node
 			nextID = newNodeID;
 			System.out.println("<---> nextID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-			sleep(500);    // Wait so the responses don't collide
+			sleep(100);    // Wait so the responses don't collide
 			respondToMulticast(newNodeIP, currentID, "previousID");
 		}
 	}
@@ -392,7 +418,7 @@ public class ClientApplication {
 
 			// Create socket on the unicast port (without conflicting with UnicastListener which uses the same port)
 			adapter.stop();
-			sleep(500);
+			sleep(10);
 			DatagramSocket socket = null;
 			try {
 				// Acquire the lock before creating the DatagramSocket
@@ -408,7 +434,7 @@ public class ClientApplication {
 				socket.close();
 				socket.disconnect();
 			}
-			sleep(500);
+			sleep(10);
 			adapter.start();
 		} catch (IOException e) {
 			System.out.println("<" + this.name + "> - ERROR - Failed to send unicast - " + e);
