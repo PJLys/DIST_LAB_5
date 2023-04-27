@@ -128,8 +128,6 @@ public class ClientApplication {
 			DatagramPacket packet = new DatagramPacket(Txbuffer, Txbuffer.length, InetAddress.getByName(fileLocation), fileUnicastPort);
 
 			// Create socket on the unicast port (without conflicting with UnicastListener which uses the same port)
-			fileAdapter.stop();
-			sleep(10);
 			DatagramSocket socket = null;
 
 			try {
@@ -146,9 +144,6 @@ public class ClientApplication {
 				socket.close();
 				socket.disconnect();
 			}
-
-			sleep(10);
-			fileAdapter.start();
 		} catch (IOException e) {
 			System.out.println("<" + this.name + "> - ERROR - Failed to send unicast - " + e);
 			failure();
@@ -283,7 +278,7 @@ public class ClientApplication {
 		int newNodeID = hashValue(newNodeName);
 		int currentID = hashValue(name);
 
-		sleep(200);    // Wait so the responses follow that of the naming server
+		sleep(50);    // Wait so the responses follow that of the naming server
 
 		if (currentID == nextID) {	// Test if this node is alone -> change previous and next ID to the new node
 			previousID = newNodeID;
@@ -297,7 +292,7 @@ public class ClientApplication {
 		} else if (currentID <= newNodeID && newNodeID <= nextID) {	// Test if the new node should become the nextID of the new node
 			nextID = newNodeID;
 			System.out.println("<---> nextID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-			sleep(100);    // Wait so the responses don't collide
+			sleep(50);    // Wait so the responses don't collide
 			respondToMulticast(newNodeIP, currentID, "previousID");
 		}
 	}
@@ -417,8 +412,6 @@ public class ClientApplication {
 			DatagramPacket packet = new DatagramPacket(Txbuffer, Txbuffer.length, InetAddress.getByName(IPAddress2), port);
 
 			// Create socket on the unicast port (without conflicting with UnicastListener which uses the same port)
-			adapter.stop();
-			sleep(10);
 			DatagramSocket socket = null;
 			try {
 				// Acquire the lock before creating the DatagramSocket
@@ -434,8 +427,6 @@ public class ClientApplication {
 				socket.close();
 				socket.disconnect();
 			}
-			sleep(10);
-			adapter.start();
 		} catch (IOException e) {
 			System.out.println("<" + this.name + "> - ERROR - Failed to send unicast - " + e);
 			failure();
