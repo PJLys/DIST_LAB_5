@@ -8,6 +8,7 @@ import org.springframework.messaging.Message;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.util.Arrays;
 
 public class DiscoveryClient {
     private static int previousID;
@@ -50,7 +51,7 @@ public class DiscoveryClient {
             rxData = Communicator.receiveUnicast(receiveUnicastPort);
         }
         catch (IOException e) {
-            System.out.println(e.getStackTrace());
+            System.out.println(Arrays.toString(e.getStackTrace()));
             failure();
         }
 
@@ -192,6 +193,7 @@ public class DiscoveryClient {
         String message = currentID + "|" + previousOrNext;
         try {
             Communicator.sendUnicast(message, newNodeIP, unicastPort);
+            System.out.println("<---> Send response to multicast of node " + newNodeIP + " <--->");
         } catch (IOException e) {
             System.out.println("Responding to multicast failed");
             failure();
