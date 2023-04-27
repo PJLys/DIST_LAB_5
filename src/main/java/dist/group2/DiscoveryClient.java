@@ -1,7 +1,5 @@
-package dist.group2.Discovery;
+package dist.group2;
 
-import dist.group2.Communicator;
-import dist.group2.Naming.NamingClient;
 import jakarta.annotation.PreDestroy;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.Message;

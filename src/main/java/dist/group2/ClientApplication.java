@@ -1,11 +1,8 @@
 package dist.group2;
 
-import dist.group2.Discovery.DiscoveryClient;
-import dist.group2.Naming.NamingClient;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
-import org.springframework.integration.ip.udp.UnicastReceivingChannelAdapter;
 
 import java.io.IOException;
 import java.net.InetAddress;
