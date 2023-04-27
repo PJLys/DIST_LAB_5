@@ -79,6 +79,7 @@ public class ClientApplication {
 		replicateFiles();
 	}
 
+
 	// -----------------------------------------------------------------------------------------------------------------
 	//                                    		  LAB 5 - Replication
 	// -----------------------------------------------------------------------------------------------------------------
@@ -143,6 +144,8 @@ public class ClientApplication {
 		fileAdapter = new UnicastReceivingChannelAdapter(fileUnicastPort);
 		fileAdapter.setOutputChannelName("FileUnicast");
 		return fileAdapter;
+	}
+
 	public UnicastReceivingChannelAdapter serverUnicastReceiver() {
 		UnicastReceivingChannelAdapter adapter = new UnicastReceivingChannelAdapter(fileUnicastPort);
 		adapter.setOutputChannelName("FileUnicast");
