@@ -41,10 +41,12 @@ public class DiscoveryClient {
         System.out.println("<---> " + name + " Bootstrap <--->");
         // Send multicast to other nodes and naming server
         String data = name + "|" + IPAddress;
+        System.out.println("<---> " + name + " Discovery Multicast Sending <--->");
         Communicator.sendMulticast(data);
 
         // Listen for a response with the number of nodes & IP address of the naming server
         int receiveUnicastPort = 4447;
+        System.out.println("<---> Waiting for unicast response from NS to multicast of node " + IPAddress + " <--->");
         String RxData = Communicator.receiveUnicast(receiveUnicastPort);
 
         String namingServerIP = RxData.split("\\|")[0];
