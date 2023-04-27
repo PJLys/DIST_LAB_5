@@ -3,6 +3,7 @@ package dist.group2.NamingServer;
 import jakarta.annotation.PreDestroy;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jdk.jshell.spi.ExecutionControl;
+import net.minidev.json.JSONObject;
 import org.hibernate.cfg.NotYetImplementedException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
@@ -109,63 +111,42 @@ public class ClientApplication {
 		}
 		return localFiles;
 	}
-	
-	public void sendFile(String fileName) throws IOException {	// Send file to replicated node
-		try {
-			String fileLocation = findFile(fileName);
-			System.out.println("Received location reply from server - " + fileName + " is located at " + fileLocation);
-			System.out.println("Send file to " + fileLocation);
 
-			// Read the text from the file
-			Path path = Path.of(folder_path.toString() + "\\" + fileName);
-			//File file = new File(folder_path.toString() + "\\" + fileName);
-			//String fileData = file.toString();
-			byte[] Txbuffer = Files.readAllBytes(path);
-			//List<String> allLines = Files.readAllLines(path, StandardCharsets.UTF_8);
+	public void sendFile(String fileName) throws IOException {    // Send file to replicated node
+		// Get IP addr of replicator node
+		// Find IP address of replicator node
+		String replicator_loc = findFile(fileName);
 
-			// Prepare response packet
+		// Create JSON object from File
+		Path file_path = Path.of(folder_path.toString() + '\\' + fileName);
+		JSONObject jo = new JSONObject();
+		jo.put("name", fileName);
+		jo.put("data", Files.readAllBytes(file_path));
 
-			DatagramPacket packet = new DatagramPacket(Txbuffer, Txbuffer.length, InetAddress.getByName(fileLocation), fileUnicastPort);
+		// Write the JSON data into a buffer
+		byte[] data = jo.toString().getBytes(StandardCharsets.UTF_8);
 
-			// Create socket on the unicast port (without conflicting with UnicastListener which uses the same port)
-			fileAdapter.stop();
-			sleep(10);
-			DatagramSocket socket = null;
+		// Create TCP socket and
+		Socket tcp_socket = new Socket(InetAddress.getByName(replicator_loc), fileUnicastPort);
+		OutputStream os = tcp_socket.getOutputStream();
 
-			try {
-				// Acquire the lock before creating the DatagramSocket
-				socket = new DatagramSocket();
-			} catch (Exception e) {
-				System.out.println("Address already in use");
-				failure();
-			}
+		// Send data
+		os.write(data);
+		os.flush();
 
-			// Send response to the IP of the node on the unicast port
-			if (socket != null) {
-				socket.send(packet);
-				socket.close();
-				socket.disconnect();
-			}
-
-			sleep(10);
-			fileAdapter.start();
-		} catch (IOException e) {
-			System.out.println("<" + this.name + "> - ERROR - Failed to send unicast - " + e);
-			failure();
-			throw new IllegalStateException("Client has failed and should have been stopped by now");
-		}
+		tcp_socket.close();
 	}
 
 	// ----------------------------------------- FILE UNICAST RECEIVER -------------------------------------------------
 	@Bean
-	public UnicastReceivingChannelAdapter serverUnicastReceiver() {
+	public UnicastReceivingChannelAdapter fileUnicastReceiver() {
 		fileAdapter = new UnicastReceivingChannelAdapter(fileUnicastPort);
 		fileAdapter.setOutputChannelName("FileUnicast");
 		return fileAdapter;
 	}
 
 	@ServiceActivator(inputChannel = "FileUnicast")
-	public void serverUnicastEvent(Message<byte[]> message) {
+	public void fileUnicastEvent(Message<byte[]> message) {
 		byte[] payload = message.getPayload();
 		DatagramPacket dataPacket = new DatagramPacket(payload, payload.length);
 
@@ -195,12 +176,12 @@ public class ClientApplication {
 
 
 			if (numberOfNodes == 1) {
-				previousID = hashValue(name); 	// Set previousID to its own ID
-				nextID = hashValue(name); 		// Set nextID to its own ID
+				previousID = hashValue(name);     // Set previousID to its own ID
+				nextID = hashValue(name);         // Set nextID to its own ID
 				System.out.println("<---> No other nodes present: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
 			} else {
-				previousID = hashValue(name); 	// Set previousID to its own ID
-				nextID = hashValue(name); 		// Set nextID to its own ID
+				previousID = hashValue(name);     // Set previousID to its own ID
+				nextID = hashValue(name);         // Set nextID to its own ID
 				System.out.println("<---> Other nodes present: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
 			}
 
@@ -285,16 +266,16 @@ public class ClientApplication {
 
 		sleep(200);    // Wait so the responses follow that of the naming server
 
-		if (currentID == nextID) {	// Test if this node is alone -> change previous and next ID to the new node
+		if (currentID == nextID) {    // Test if this node is alone -> change previous and next ID to the new node
 			previousID = newNodeID;
 			nextID = newNodeID;
 			System.out.println("<---> connected to first other node - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
 			respondToMulticast(newNodeIP, currentID, "bothIDs");
-		} else if (previousID < newNodeID && newNodeID <= currentID) {	// Test if this node should become the previousID of the new node
+		} else if (previousID < newNodeID && newNodeID <= currentID) {    // Test if this node should become the previousID of the new node
 			previousID = newNodeID;
 			System.out.println("<---> previousID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
 			respondToMulticast(newNodeIP, currentID, "nextID");
-		} else if (currentID <= newNodeID && newNodeID <= nextID) {	// Test if the new node should become the nextID of the new node
+		} else if (currentID <= newNodeID && newNodeID <= nextID) {    // Test if the new node should become the nextID of the new node
 			nextID = newNodeID;
 			System.out.println("<---> nextID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
 			sleep(100);    // Wait so the responses don't collide
@@ -358,14 +339,14 @@ public class ClientApplication {
 
 		int currentID = Integer.parseInt(RxData.split("\\|")[0]);
 		String previousOrNext = RxData.split("\\|")[1];
-		if (previousOrNext.equals("bothIDs")) {				// Transmitter becomes previous & next ID
+		if (previousOrNext.equals("bothIDs")) {                // Transmitter becomes previous & next ID
 			previousID = currentID; // Set previous ID
 			nextID = currentID;
 			System.out.println("<---> previous & next IDs changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
 		} else if (previousOrNext.equals("previousID")) {   // Transmitter becomes previous ID
 			previousID = currentID; // Set previous ID
 			System.out.println("<---> previousID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-		} else if (previousOrNext.equals("nextID")) {   	// Transmitter becomes next ID
+		} else if (previousOrNext.equals("nextID")) {       // Transmitter becomes next ID
 			nextID = currentID;
 			System.out.println("<---> nextID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
 		} else {
@@ -495,6 +476,13 @@ public class ClientApplication {
 		}
 	}
 
+	/**
+	 * Finds the IP address of the node that stores a given file.
+	 *
+	 * @param fileName The name of the file to search for.
+	 * @return The IP address of the node that stores the file, or null if the file was not found.
+	 * @throws RestClientException if there was an error communicating with the database.
+	 */
 	@GetMapping
 	public String findFile(String fileName) {
 		String url = baseUrl + "?fileName=" + fileName;
@@ -502,7 +490,7 @@ public class ClientApplication {
 			String IPAddress = restTemplate.getForObject(url, String.class);
 			System.out.println("<" + this.name + "> - " + fileName + " is stored at IPAddress " + IPAddress);
 			return IPAddress;
-		} catch(Exception e) {
+		} catch(RestClientException e) {
 			System.out.println("<" + this.name + "> - ERROR - Failed to find " + fileName + ", no nodes in database - " + e);
 			failure();
 			return null;
