@@ -45,10 +45,17 @@ public class DiscoveryClient {
         // Listen for a response with the number of nodes & IP address of the naming server
         int receiveUnicastPort = 4447;
         System.out.println("<---> Waiting for unicast response from NS to multicast of node " + IPAddress + " <--->");
-        String RxData = Communicator.receiveUnicast(receiveUnicastPort);
+        String rxData = null;
+        try {
+            rxData = Communicator.receiveUnicast(receiveUnicastPort);
+        }
+        catch (IOException e) {
+            System.out.println(e.getStackTrace());
+            failure();
+        }
 
-        String namingServerIP = RxData.split("\\|")[0];
-        int numberOfNodes = Integer.parseInt(RxData.split("\\|")[1]);
+        String namingServerIP = rxData.split("\\|")[0];
+        int numberOfNodes = Integer.parseInt(rxData.split("\\|")[1]);
         System.out.println("Received answer to multicast from naming server - " + numberOfNodes + " node(s) in the network");
 
         previousID = hashValue(name);    // Set previousID to its own ID
