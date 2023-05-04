@@ -23,11 +23,14 @@ public class ClientApplication {
 
         Communicator communicator = new Communicator(multicastGroup, multicastPort, multicastIP, unicastPortDiscovery);
         DiscoveryClient discoveryClient = new DiscoveryClient(name, IPAddress, namingPort, unicastPortDiscovery);
+        ReplicationClient replicationClient =
 
         System.out.println("<---> " + name + " Instantiated with IP " + IPAddress + " <--->");
+        replicationClient.addFiles();
         discoveryClient.bootstrap();
         NamingClient.setBaseUrl(discoveryClient.getBaseUrl());
         NamingClient.setName(name);
+        replicationClient.replicateFiles();
     }
 
     public static void main(String[] args) {
