@@ -111,7 +111,7 @@ public class DiscoveryClient {
         NamingClient.deleteNode(name);
     }
 
-    private void failure() {
+    public void failure() {
         if (!shuttingDown) {
             System.out.println("<---> " + this.name + " Failure <--->");
             shutdown();

@@ -20,10 +20,12 @@ public class ClientApplication {
         int multicastPort = 4446;
         int unicastPortDiscovery = 4449;
         int namingPort = 8080;
+        int fileUnicastPort = 4451;
 
         Communicator communicator = new Communicator(multicastGroup, multicastPort, multicastIP, unicastPortDiscovery);
         DiscoveryClient discoveryClient = new DiscoveryClient(name, IPAddress, namingPort, unicastPortDiscovery);
-        ReplicationClient replicationClient =
+        ReplicationClient replicationClient = new ReplicationClient(name, fileUnicastPort);
+
 
         System.out.println("<---> " + name + " Instantiated with IP " + IPAddress + " <--->");
         replicationClient.addFiles();

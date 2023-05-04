@@ -38,13 +38,16 @@ public class NamingClient {
         System.out.println("<" + name + "> - Deleted node with name " + nodeName);
     }
 
-    public static void findFile(String fileName) {
+
+    public static String findFile(String fileName) {
         String url = baseUrl + "?fileName=" + fileName;
         try {
             String IPAddress = restTemplate.getForObject(url, String.class);
             System.out.println("<" + name + "> - " + fileName + " is stored at IPAddress " + IPAddress);
+            return IPAddress;
         } catch (Exception e) {
             throw new RuntimeException("There are no nodes in the database");
+            // Failure
         }
     }
 
