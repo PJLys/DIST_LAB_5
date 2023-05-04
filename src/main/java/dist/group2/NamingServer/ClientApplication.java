@@ -113,450 +113,446 @@ public class ClientApplication {
 		return localFiles;
 	}
 
-	public void sendFile(String fileName) throws IOException {    // Send file to replicated node
+	/**
+	 * Sends file to replicator node
+	 * @param fileName name of the file that needs to be sent
+	 */
+	public void sendFile(String fileName) {
 		// Get IP addr of replicator node
-		// Find IP address of replicator node
 		String replicator_loc = findFile(fileName);
 
 		// Create JSON object from File
 		Path file_path = Path.of(folder_path.toString() + '\\' + fileName);
 		JSONObject jo = new JSONObject();
 		jo.put("name", fileName);
-		jo.put("data", Files.readAllBytes(file_path));
+		try {
+			jo.put("data", Files.readAllBytes(file_path));
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			System.out.println("Something went wrong finding the file at location:\n\r\t"+ file_path);
+		}
+
 
 		// Write the JSON data into a buffer
-		byte[] data = jo.toString().getBytes(StandardCharsets.UTF_8);
+			byte[] data = jo.toString().getBytes(StandardCharsets.UTF_8);
 
-		// Create TCP socket and
-		Socket tcp_socket = new Socket(InetAddress.getByName(replicator_loc), fileUnicastPort);
-		OutputStream os = tcp_socket.getOutputStream();
-
-		// Send data
-		os.write(data);
-		os.flush();
-
-		tcp_socket.close();
-	}
-
-	// ----------------------------------------- FILE UNICAST RECEIVER -------------------------------------------------
-	@Bean
-	public UnicastReceivingChannelAdapter fileUnicastReceiver() {
-		fileAdapter = new UnicastReceivingChannelAdapter(fileUnicastPort);
-		fileAdapter.setOutputChannelName("FileUnicast");
-		return fileAdapter;
-	}
-
-	public UnicastReceivingChannelAdapter serverUnicastReceiver() {
-		UnicastReceivingChannelAdapter adapter = new UnicastReceivingChannelAdapter(fileUnicastPort);
-		adapter.setOutputChannelName("FileUnicast");
-		return adapter;
-	}
-
-	@ServiceActivator(inputChannel = "FileUnicast")
-	public void serverUnicastEvent(Message<byte[]> message) {
-		// Read the length of the JSON data as a 4-byte integer in network byte order
-		DataInputStream dis = new DataInputStream(clientSocket.getInputStream()); int jsonLength = Integer.reverseBytes(dis.readInt());
-		// Read the JSON data into a byte array
-		byte[] jsonBytes = new byte[jsonLength]; dis.readFully(jsonBytes);
-		// Convert the JSON data to a string
-		String json = new String(jsonBytes, StandardCharsets.UTF_8);
-		// Parse the JSON data
-		JSONObject jo = new JSONObject(json);
-		// Extract the file name and data from the JSON object
-		String fileName = jo.getString("name"); byte[] fileData = jo.getBytes("data");
-		// Write the file data to disk
-		Path file_path = Path.of(folder_path.toString() + '\\' + fileName); Files.write(file_path, fileData);
-		// Close the client socket and server socket
-		clientSocket.close(); serverSocket.close();
-
-
-
-
-
-		try {
-			byte[] payload = message.getPayload();
-			FileOutputStream outputStream = new FileOutputStream("file.txt", true); // true for append mode
-			outputStream.write(payload);
-			outputStream.close();
-			System.out.println("Bytes appended to file successfully.");
-		} catch (IOException e) {
-			System.out.println("Error appending bytes to file: " + e.getMessage());
-		}
-	}
-
-	// -----------------------------------------------------------------------------------------------------------------
-	//                                       BOOTSTRAP, SHUTDOWN & FAILURE
-	// -----------------------------------------------------------------------------------------------------------------
-	public void bootstrap() {
-		System.out.println("<---> " + name + " Bootstrap <--->");
-		try {
-			// Send multicast to other nodes and naming server
-			sendMulticast();
-
-			// Listen on port 4447 for a response with the number of nodes & IP address of the naming server
-			String RxData = receiveUnicast(4447);
-			namingServerIP = RxData.split("\\|")[0];
-			int numberOfNodes = Integer.parseInt(RxData.split("\\|")[1]);
-			System.out.println("Received answer to multicast from naming server - " + numberOfNodes + " node(s) in the network");
-
-
-			if (numberOfNodes == 1) {
-				previousID = hashValue(name); 	// Set previousID to its own ID
-				nextID = hashValue(name); 		// Set nextID to its own ID
-				System.out.println("<---> No other nodes present: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-			} else {
-				previousID = hashValue(name); 	// Set previousID to its own ID
-				nextID = hashValue(name); 		// Set nextID to its own ID
-				System.out.println("<---> Other nodes present: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-			}
-
-			// Set the baseURL for further communication with the naming server
-			baseUrl = "http://" + namingServerIP + ":" + namingPort + "/api/naming";
-		} catch (Exception e) {
-			System.out.println("\t"+e.getMessage());
-		}
-	}
-
-	@PreDestroy
-	public void shutdown() {
-		System.out.println("<---> " + name + " Shutdown <--->");
-
-		// Set shuttingDown to true to avoid infinite failure loops
-		shuttingDown = true;
-
-		// Set the nextID value of the previous node to nextID of this node
-		if (previousID != hashValue(name)) {
-			System.out.println("Sending nextID to the previous node");
-			String messageToPrev = nextID + "|" + "nextID";
-			String previousIP = getIPAddress(previousID);
-			if (!previousIP.equals("NotFound")) {
-				sendUnicast(messageToPrev, previousIP, unicastPort);
-			} else {
-				System.out.println("ERROR - couldn't notify previous node: IP not present in NS");
-			}
-		}
-
-		// Set the previousID value of the next node to previousID of this node
-		if (nextID != hashValue(name)) {
-			System.out.println("Sending previousID to the next node");
-			String messageToNext = previousID + "|" + "previousID";
-			String nextIP = getIPAddress(nextID);
-			if (!nextIP.equals("NotFound")) {
-				sendUnicast(messageToNext, nextIP, unicastPort);
-			} else {
-				System.out.println("ERROR - couldn't notify next node because IP is not in present in the NS");
-			}
-		}
-
-		// Delete this node from the Naming Server's database
-		deleteNode(name);
-
-		// Stop execution of Spring Boot application
-		System.out.println("<---> " + name + " Spring Boot Stopped <--->");
-		multicastSocket.close();
-		SpringApplication.exit(context);
-	}
-
-	public void failure() {
-		if (!shuttingDown) {
-			System.out.println("<---> " + name + " Failure <--->");
-			shutdown();
-		}
-	}
-
-	// -----------------------------------------------------------------------------------------------------------------
-	//                                  DISCOVERY & BOOTSTRAP ASSISTANCE METHODS
-	// -----------------------------------------------------------------------------------------------------------------
-	public void sendMulticast() {
-		try {
-			System.out.println("<---> " + name + " Discovery Multicast Sending <--->");
-
-			String data = name + "|" + IPAddress;
-			byte[] Txbuffer = data.getBytes();
-			DatagramPacket packet = new DatagramPacket(Txbuffer, Txbuffer.length, InetAddress.getByName(multicastIP), multicastPort);
-
-			multicastSocket.send(packet);
-		} catch (IOException e) {
-			System.out.println("<" + this.name + "> - ERROR - Failed to send multicast - " + e);
-			failure();
-		}
-	}
-
-	public void compareIDs(String RxData) {
-		String newNodeName = RxData.split("\\|")[0];
-		String newNodeIP = RxData.split("\\|")[1];
-
-		int newNodeID = hashValue(newNodeName);
-		int currentID = hashValue(name);
-
-		sleep(200);    // Wait so the responses follow that of the naming server
-
-		if (currentID == nextID) {	// Test if this node is alone -> change previous and next ID to the new node
-			previousID = newNodeID;
-			nextID = newNodeID;
-			System.out.println("<---> connected to first other node - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-			respondToMulticast(newNodeIP, currentID, "bothIDs");
-		} else if (previousID < newNodeID && newNodeID <= currentID) {	// Test if this node should become the previousID of the new node
-			previousID = newNodeID;
-			System.out.println("<---> previousID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-			respondToMulticast(newNodeIP, currentID, "nextID");
-		} else if (currentID <= newNodeID && newNodeID <= nextID) {	// Test if the new node should become the nextID of the new node
-			nextID = newNodeID;
-			System.out.println("<---> nextID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-			sleep(100);    // Wait so the responses don't collide
-			respondToMulticast(newNodeIP, currentID, "previousID");
-		}
-	}
-
-	// -----------------------------------------------------------------------------------------------------------------
-	//                                            MULTICAST LISTENER
-	// -----------------------------------------------------------------------------------------------------------------
-	@Bean
-	public MulticastReceivingChannelAdapter multicastReceiver(DatagramSocket socket) {
-		MulticastReceivingChannelAdapter adapter = new MulticastReceivingChannelAdapter(multicastIP, 4446);
-		adapter.setOutputChannelName("Multicast");
-		adapter.setSocket(socket);
-		return adapter;
-	}
-
-	@Bean
-	public DatagramSocket datagramSocket() throws IOException {
-		try {
-			multicastSocket = new MulticastSocket(multicastPort);
-		} catch (Exception e) {
-			System.out.println("Address already in use");
-			failure();
-		}
-		InetAddress group = InetAddress.getByName(multicastIP);
-		multicastSocket.joinGroup(group);
-		return multicastSocket;
-	}
-
-	@ServiceActivator(inputChannel = "Multicast")
-	public void multicastEvent(Message<byte[]> message) {
-		byte[] payload = message.getPayload();
-		DatagramPacket dataPacket = new DatagramPacket(payload, payload.length);
-
-		String RxData = new String(dataPacket.getData(), 0, dataPacket.getLength());
-		System.out.println(name + " - Received multicast message from other node: " + RxData);
-
-		// Use this multicast data to update your previous & next node IDs
-		compareIDs(RxData);
-	}
-
-	// -----------------------------------------------------------------------------------------------------------------
-	//                                              UNICAST LISTENER
-	// -----------------------------------------------------------------------------------------------------------------
-	@Bean
-	public UnicastReceivingChannelAdapter unicastReceiver() {
-		adapter = new UnicastReceivingChannelAdapter(unicastPort);
-		adapter.setOutputChannelName("Unicast");
-		return adapter;
-	}
-
-	@ServiceActivator(inputChannel = "Unicast")
-	public void unicastEvent(Message<byte[]> message) {
-		byte[] payload = message.getPayload();
-		DatagramPacket dataPacket = new DatagramPacket(payload, payload.length);
-
-		String RxData = new String(dataPacket.getData(), 0, dataPacket.getLength());
-		System.out.println("Received unicast message: " + RxData);
-
-		int currentID = Integer.parseInt(RxData.split("\\|")[0]);
-		String previousOrNext = RxData.split("\\|")[1];
-		if (previousOrNext.equals("bothIDs")) {				// Transmitter becomes previous & next ID
-			previousID = currentID; // Set previous ID
-			nextID = currentID;
-			System.out.println("<---> previous & next IDs changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-		} else if (previousOrNext.equals("previousID")) {   // Transmitter becomes previous ID
-			previousID = currentID; // Set previous ID
-			System.out.println("<---> previousID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-		} else if (previousOrNext.equals("nextID")) {   	// Transmitter becomes next ID
-			nextID = currentID;
-			System.out.println("<---> nextID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-		} else {
-			System.out.println("<" + this.name + "> - ERROR - Unicast received 2nd parameter other than 'previousID' or 'nextID'");
-			failure();
-		}
-	}
-
-	// -----------------------------------------------------------------------------------------------------------------
-	//                                          GENERAL PURPOSE METHODS
-	// -----------------------------------------------------------------------------------------------------------------
-	public String receiveUnicast(int port) {
-		try {
-			System.out.println("<---> Waiting for unicast response from NS to multicast of node " + IPAddress + " <--->");
-
-			// Prepare receiving socket
-			byte[] RxBuffer = new byte[256];
-			DatagramSocket socket = null;
+			// Create TCP socket and send
 			try {
-				socket = new DatagramSocket(port);
-			} catch (Exception e) {
-				System.out.println("Address already in use");
-				failure();
+				Socket tcp_socket = new Socket(InetAddress.getByName(replicator_loc), fileUnicastPort);
+				OutputStream os = tcp_socket.getOutputStream();
+
+				// Send data
+				os.write(data);
+				os.flush();
+
+				tcp_socket.close();
+
+			} catch (IOException e) {
+				System.out.println(e.getMessage());
+				System.out.println("Failed to connect to "+replicator_loc+ ", aborting file replication!");
 			}
-
-			// Prepare receiving packet
-			DatagramPacket dataPacket = new DatagramPacket(RxBuffer, RxBuffer.length);
-
-			// Wait to receive & close socket
-			socket.receive(dataPacket);
-			socket.close();
-
-			// Read data from dataPacket
-			String RxData = new String(dataPacket.getData(), 0, dataPacket.getLength());
-			return RxData;
-		} catch (IOException e) {
-			System.out.println("<" + this.name + "> - ERROR - Failed to receive unicast - " + e);
-			failure();
-			throw new IllegalStateException("Client has failed and should have been stopped by now");
 		}
-	}
 
-	public void sendUnicast(String message, String IPAddress2, int port) {
-		try {
-			System.out.println("<---> Send unicast to node " + IPAddress2 + " on port " + port + " <--->");
+		// ----------------------------------------- FILE UNICAST RECEIVER -------------------------------------------------
+		@Bean
+		public UnicastReceivingChannelAdapter fileUnicastReceiver() {
+			fileAdapter = new UnicastReceivingChannelAdapter(fileUnicastPort);
+			fileAdapter.setOutputChannelName("FileUnicast");
+			return fileAdapter;
+		}
 
-			// Prepare response packet
-			byte[] Txbuffer = message.getBytes();
-			DatagramPacket packet = new DatagramPacket(Txbuffer, Txbuffer.length, InetAddress.getByName(IPAddress2), port);
+		public UnicastReceivingChannelAdapter serverUnicastReceiver() {
+			UnicastReceivingChannelAdapter adapter = new UnicastReceivingChannelAdapter(fileUnicastPort);
+			adapter.setOutputChannelName("FileUnicast");
+			return adapter;
+		}
 
-			// Create socket on the unicast port (without conflicting with UnicastListener which uses the same port)
-			adapter.stop();
-			sleep(10);
-			DatagramSocket socket = null;
+		@ServiceActivator(inputChannel = "FileUnicast")
+		public void serverUnicastEvent(Message<byte[]> message) {
 			try {
-				// Acquire the lock before creating the DatagramSocket
-				socket = new DatagramSocket();
-			} catch (Exception e) {
-				System.out.println("Address already in use");
-				failure();
-			}
-
-			// Send response to the IP of the node on the unicast port
-			if (socket != null) {
-				socket.send(packet);
-				socket.close();
-				socket.disconnect();
-			}
-			sleep(10);
-			adapter.start();
-		} catch (IOException e) {
-			System.out.println("<" + this.name + "> - ERROR - Failed to send unicast - " + e);
-			failure();
-			throw new IllegalStateException("Client has failed and should have been stopped by now");
-		}
-	}
-
-	public void respondToMulticast(String newNodeIP, int currentID, String previousOrNext) {
-		String message = currentID + "|" + previousOrNext;
-		sendUnicast(message, newNodeIP, unicastPort);
-	}
-
-	public Integer hashValue(String name) {
-		Integer hash = Math.abs(name.hashCode()) % 32769;
-		return hash;
-	}
-
-	public void sleep(int time) {
-		try {
-			Thread.sleep(time);
-		} catch (InterruptedException e) {
-			failure();
-		}
-	}
-
-	// -----------------------------------------------------------------------------------------------------------------
-	//                                        REST METHODS (NAMING SERVER)
-	// -----------------------------------------------------------------------------------------------------------------
-	@PostMapping
-	public void addNode(String nodeName, String IPAddress) {
-		String url = baseUrl;
-
-		Map<String, String> requestBody = new HashMap<>();
-		requestBody.put("nodeName", nodeName);
-		requestBody.put("IPAddress", IPAddress);
-		try {
-			System.out.println("<" + this.name + "> - Add node with name " + nodeName + " and IP address " + IPAddress);
-			restTemplate.postForObject(url, requestBody, Void.class);
-		} catch(Exception e) {
-			System.out.println("<" + this.name + "> - ERROR - Failed to add " + nodeName + ", hash collision occurred - " + e);
-			failure();
-		}
-	}
-
-	@DeleteMapping
-	public void deleteNode(String nodeName) {
-		String url = baseUrl + "/" + nodeName;
-		try {
-			restTemplate.delete(url);
-			System.out.println("<" + this.name + "> - Deleted node with name " + nodeName);
-		} catch(Exception e) {
-			System.out.println("<" + this.name + "> - ERROR - Failed to delete " + nodeName + " - " + e);
-			// Avoid calling failure if the node is already shutting down (to prevent infinite loops)
-			if(!shuttingDown) {
-				failure();
+				byte[] payload = message.getPayload();
+				FileOutputStream outputStream = new FileOutputStream("file.txt", true); // true for append mode
+				outputStream.write(payload);
+				outputStream.close();
+				System.out.println("Bytes appended to file successfully.");
+			} catch (IOException e) {
+				System.out.println("Error appending bytes to file: " + e.getMessage());
 			}
 		}
-	}
 
-	@GetMapping
-	public String findFile(String fileName) {
-		String url = baseUrl + "?fileName=" + fileName;
-		try {
-			String IPAddress = restTemplate.getForObject(url, String.class);
-			System.out.println("<" + this.name + "> - " + fileName + " is stored at IPAddress " + IPAddress);
-			return IPAddress;
-		} catch(Exception e) {
-			System.out.println("<" + this.name + "> - ERROR - Failed to find " + fileName + ", no nodes in database - " + e);
-			failure();
-			return null;
-		}
-	}
-
-	@GetMapping
-	public String getIPAddress(int nodeID) {
-		String url = baseUrl + "/translate" + "?nodeID=" + nodeID;
-		try {
-			String IPAddress = restTemplate.getForObject(url, String.class);
-			System.out.println("<" + this.name + "> - Node with ID " + nodeID + " has IPAddress " + IPAddress);
-			return IPAddress;
-		} catch(Exception e) {
-			System.out.println("<" + this.name + "> - ERROR - Failed to find IPAddress of node with ID " + nodeID + " - " + e);
-			failure();
-			return "NotFound";
-		}
-	}
-
-	private void run() {
-		while (true) {
-			WatchKey k;
+		// -----------------------------------------------------------------------------------------------------------------
+		//                                       BOOTSTRAP, SHUTDOWN & FAILURE
+		// -----------------------------------------------------------------------------------------------------------------
+		public void bootstrap() {
+			System.out.println("<---> " + name + " Bootstrap <--->");
 			try {
-				k = file_daemon.take();
-			} catch (InterruptedException e) {
-				return;
-			}
+				// Send multicast to other nodes and naming server
+				sendMulticast();
 
-			for (WatchEvent<?> event : k.pollEvents()) {
-				WatchEvent.Kind<?> kind = event.kind();
+				// Listen on port 4447 for a response with the number of nodes & IP address of the naming server
+				String RxData = receiveUnicast(4447);
+				namingServerIP = RxData.split("\\|")[0];
+				int numberOfNodes = Integer.parseInt(RxData.split("\\|")[1]);
+				System.out.println("Received answer to multicast from naming server - " + numberOfNodes + " node(s) in the network");
 
-				if (kind == StandardWatchEventKinds.OVERFLOW) {
-					continue;
+
+				if (numberOfNodes == 1) {
+					previousID = hashValue(name);     // Set previousID to its own ID
+					nextID = hashValue(name);         // Set nextID to its own ID
+					System.out.println("<---> No other nodes present: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
+				} else {
+					previousID = hashValue(name);     // Set previousID to its own ID
+					nextID = hashValue(name);         // Set nextID to its own ID
+					System.out.println("<---> Other nodes present: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
 				}
 
-				@SuppressWarnings("unchecked")
-				WatchEvent<Path> ev = (WatchEvent<Path>) event;
-				Path filename = ev.context();
-				Path child = folder_path.resolve(filename);
+				// Set the baseURL for further communication with the naming server
+				baseUrl = "http://" + namingServerIP + ":" + namingPort + "/api/naming";
+			} catch (Exception e) {
+				System.out.println("\t"+e.getMessage());
+			}
+		}
 
-				System.out.println(kind.name() + ": " + child);
+		@PreDestroy
+		public void shutdown() {
+			System.out.println("<---> " + name + " Shutdown <--->");
 
-				throw new NotYetImplementedException("Notify replicator node!");
+			// Set shuttingDown to true to avoid infinite failure loops
+			shuttingDown = true;
+
+			// Set the nextID value of the previous node to nextID of this node
+			if (previousID != hashValue(name)) {
+				System.out.println("Sending nextID to the previous node");
+				String messageToPrev = nextID + "|" + "nextID";
+				String previousIP = getIPAddress(previousID);
+				if (!previousIP.equals("NotFound")) {
+					sendUnicast(messageToPrev, previousIP, unicastPort);
+				} else {
+					System.out.println("ERROR - couldn't notify previous node: IP not present in NS");
+				}
 			}
 
-			if (!k.reset())
-				break;
+			// Set the previousID value of the next node to previousID of this node
+			if (nextID != hashValue(name)) {
+				System.out.println("Sending previousID to the next node");
+				String messageToNext = previousID + "|" + "previousID";
+				String nextIP = getIPAddress(nextID);
+				if (!nextIP.equals("NotFound")) {
+					sendUnicast(messageToNext, nextIP, unicastPort);
+				} else {
+					System.out.println("ERROR - couldn't notify next node because IP is not in present in the NS");
+				}
+			}
+
+			// Delete this node from the Naming Server's database
+			deleteNode(name);
+
+			// Stop execution of Spring Boot application
+			System.out.println("<---> " + name + " Spring Boot Stopped <--->");
+			multicastSocket.close();
+			SpringApplication.exit(context);
 		}
-	}
+
+		public void failure() {
+			if (!shuttingDown) {
+				System.out.println("<---> " + name + " Failure <--->");
+				shutdown();
+			}
+		}
+
+		// -----------------------------------------------------------------------------------------------------------------
+		//                                  DISCOVERY & BOOTSTRAP ASSISTANCE METHODS
+		// -----------------------------------------------------------------------------------------------------------------
+		public void sendMulticast() {
+			try {
+				System.out.println("<---> " + name + " Discovery Multicast Sending <--->");
+
+				String data = name + "|" + IPAddress;
+				byte[] Txbuffer = data.getBytes();
+				DatagramPacket packet = new DatagramPacket(Txbuffer, Txbuffer.length, InetAddress.getByName(multicastIP), multicastPort);
+
+				multicastSocket.send(packet);
+			} catch (IOException e) {
+				System.out.println("<" + this.name + "> - ERROR - Failed to send multicast - " + e);
+				failure();
+			}
+		}
+
+		public void compareIDs(String RxData) {
+			String newNodeName = RxData.split("\\|")[0];
+			String newNodeIP = RxData.split("\\|")[1];
+
+			int newNodeID = hashValue(newNodeName);
+			int currentID = hashValue(name);
+
+			sleep(200);    // Wait so the responses follow that of the naming server
+
+			if (currentID == nextID) {    // Test if this node is alone -> change previous and next ID to the new node
+				previousID = newNodeID;
+				nextID = newNodeID;
+				System.out.println("<---> connected to first other node - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
+				respondToMulticast(newNodeIP, currentID, "bothIDs");
+			} else if (previousID < newNodeID && newNodeID <= currentID) {    // Test if this node should become the previousID of the new node
+				previousID = newNodeID;
+				System.out.println("<---> previousID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
+				respondToMulticast(newNodeIP, currentID, "nextID");
+			} else if (currentID <= newNodeID && newNodeID <= nextID) {    // Test if the new node should become the nextID of the new node
+				nextID = newNodeID;
+				System.out.println("<---> nextID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
+				sleep(100);    // Wait so the responses don't collide
+				respondToMulticast(newNodeIP, currentID, "previousID");
+			}
+		}
+
+		// -----------------------------------------------------------------------------------------------------------------
+		//                                            MULTICAST LISTENER
+		// -----------------------------------------------------------------------------------------------------------------
+		@Bean
+		public MulticastReceivingChannelAdapter multicastReceiver(DatagramSocket socket) {
+			MulticastReceivingChannelAdapter adapter = new MulticastReceivingChannelAdapter(multicastIP, 4446);
+			adapter.setOutputChannelName("Multicast");
+			adapter.setSocket(socket);
+			return adapter;
+		}
+
+		@Bean
+		public DatagramSocket datagramSocket() throws IOException {
+			try {
+				multicastSocket = new MulticastSocket(multicastPort);
+			} catch (Exception e) {
+				System.out.println("Address already in use");
+				failure();
+			}
+			InetAddress group = InetAddress.getByName(multicastIP);
+			multicastSocket.joinGroup(group);
+			return multicastSocket;
+		}
+
+		@ServiceActivator(inputChannel = "Multicast")
+		public void multicastEvent(Message<byte[]> message) {
+			byte[] payload = message.getPayload();
+			DatagramPacket dataPacket = new DatagramPacket(payload, payload.length);
+
+			String RxData = new String(dataPacket.getData(), 0, dataPacket.getLength());
+			System.out.println(name + " - Received multicast message from other node: " + RxData);
+
+			// Use this multicast data to update your previous & next node IDs
+			compareIDs(RxData);
+		}
+
+		// -----------------------------------------------------------------------------------------------------------------
+		//                                              UNICAST LISTENER
+		// -----------------------------------------------------------------------------------------------------------------
+		@Bean
+		public UnicastReceivingChannelAdapter unicastReceiver() {
+			adapter = new UnicastReceivingChannelAdapter(unicastPort);
+			adapter.setOutputChannelName("Unicast");
+			return adapter;
+		}
+
+		@ServiceActivator(inputChannel = "Unicast")
+		public void unicastEvent(Message<byte[]> message) {
+			byte[] payload = message.getPayload();
+			DatagramPacket dataPacket = new DatagramPacket(payload, payload.length);
+
+			String RxData = new String(dataPacket.getData(), 0, dataPacket.getLength());
+			System.out.println("Received unicast message: " + RxData);
+
+			int currentID = Integer.parseInt(RxData.split("\\|")[0]);
+			String previousOrNext = RxData.split("\\|")[1];
+			if (previousOrNext.equals("bothIDs")) {                // Transmitter becomes previous & next ID
+				previousID = currentID; // Set previous ID
+				nextID = currentID;
+				System.out.println("<---> previous & next IDs changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
+			} else if (previousOrNext.equals("previousID")) {   // Transmitter becomes previous ID
+				previousID = currentID; // Set previous ID
+				System.out.println("<---> previousID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
+			} else if (previousOrNext.equals("nextID")) {       // Transmitter becomes next ID
+				nextID = currentID;
+				System.out.println("<---> nextID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
+			} else {
+				System.out.println("<" + this.name + "> - ERROR - Unicast received 2nd parameter other than 'previousID' or 'nextID'");
+				failure();
+			}
+		}
+
+		// -----------------------------------------------------------------------------------------------------------------
+		//                                          GENERAL PURPOSE METHODS
+		// -----------------------------------------------------------------------------------------------------------------
+		public String receiveUnicast(int port) {
+			try {
+				System.out.println("<---> Waiting for unicast response from NS to multicast of node " + IPAddress + " <--->");
+
+				// Prepare receiving socket
+				byte[] RxBuffer = new byte[256];
+				DatagramSocket socket = null;
+				try {
+					socket = new DatagramSocket(port);
+				} catch (Exception e) {
+					System.out.println("Address already in use");
+					failure();
+				}
+
+				// Prepare receiving packet
+				DatagramPacket dataPacket = new DatagramPacket(RxBuffer, RxBuffer.length);
+
+				// Wait to receive & close socket
+				socket.receive(dataPacket);
+				socket.close();
+
+				// Read data from dataPacket
+				String RxData = new String(dataPacket.getData(), 0, dataPacket.getLength());
+				return RxData;
+			} catch (IOException e) {
+				System.out.println("<" + this.name + "> - ERROR - Failed to receive unicast - " + e);
+				failure();
+				throw new IllegalStateException("Client has failed and should have been stopped by now");
+			}
+		}
+
+		public void sendUnicast(String message, String IPAddress2, int port) {
+			try {
+				System.out.println("<---> Send unicast to node " + IPAddress2 + " on port " + port + " <--->");
+
+				// Prepare response packet
+				byte[] Txbuffer = message.getBytes();
+				DatagramPacket packet = new DatagramPacket(Txbuffer, Txbuffer.length, InetAddress.getByName(IPAddress2), port);
+
+				// Create socket on the unicast port (without conflicting with UnicastListener which uses the same port)
+				adapter.stop();
+				sleep(10);
+				DatagramSocket socket = null;
+				try {
+					// Acquire the lock before creating the DatagramSocket
+					socket = new DatagramSocket();
+				} catch (Exception e) {
+					System.out.println("Address already in use");
+					failure();
+				}
+
+				// Send response to the IP of the node on the unicast port
+				if (socket != null) {
+					socket.send(packet);
+					socket.close();
+					socket.disconnect();
+				}
+				sleep(10);
+				adapter.start();
+			} catch (IOException e) {
+				System.out.println("<" + this.name + "> - ERROR - Failed to send unicast - " + e);
+				failure();
+				throw new IllegalStateException("Client has failed and should have been stopped by now");
+			}
+		}
+
+		public void respondToMulticast(String newNodeIP, int currentID, String previousOrNext) {
+			String message = currentID + "|" + previousOrNext;
+			sendUnicast(message, newNodeIP, unicastPort);
+		}
+
+		public Integer hashValue(String name) {
+			Integer hash = Math.abs(name.hashCode()) % 32769;
+			return hash;
+		}
+
+		public void sleep(int time) {
+			try {
+				Thread.sleep(time);
+			} catch (InterruptedException e) {
+				failure();
+			}
+		}
+
+		// -----------------------------------------------------------------------------------------------------------------
+		//                                        REST METHODS (NAMING SERVER)
+		// -----------------------------------------------------------------------------------------------------------------
+		@PostMapping
+		public void addNode(String nodeName, String IPAddress) {
+			String url = baseUrl;
+
+			Map<String, String> requestBody = new HashMap<>();
+			requestBody.put("nodeName", nodeName);
+			requestBody.put("IPAddress", IPAddress);
+			try {
+				System.out.println("<" + this.name + "> - Add node with name " + nodeName + " and IP address " + IPAddress);
+				restTemplate.postForObject(url, requestBody, Void.class);
+			} catch(Exception e) {
+				System.out.println("<" + this.name + "> - ERROR - Failed to add " + nodeName + ", hash collision occurred - " + e);
+				failure();
+			}
+		}
+
+		@DeleteMapping
+		public void deleteNode(String nodeName) {
+			String url = baseUrl + "/" + nodeName;
+			try {
+				restTemplate.delete(url);
+				System.out.println("<" + this.name + "> - Deleted node with name " + nodeName);
+			} catch(Exception e) {
+				System.out.println("<" + this.name + "> - ERROR - Failed to delete " + nodeName + " - " + e);
+				// Avoid calling failure if the node is already shutting down (to prevent infinite loops)
+				if(!shuttingDown) {
+					failure();
+				}
+			}
+		}
+
+		@GetMapping
+		public String findFile(String fileName) {
+			String url = baseUrl + "?fileName=" + fileName;
+			try {
+				String IPAddress = restTemplate.getForObject(url, String.class);
+				System.out.println("<" + this.name + "> - " + fileName + " is stored at IPAddress " + IPAddress);
+				return IPAddress;
+			} catch(Exception e) {
+				System.out.println("<" + this.name + "> - ERROR - Failed to find " + fileName + ", no nodes in database - " + e);
+				failure();
+				return null;
+			}
+		}
+
+		@GetMapping
+		public String getIPAddress(int nodeID) {
+			String url = baseUrl + "/translate" + "?nodeID=" + nodeID;
+			try {
+				String IPAddress = restTemplate.getForObject(url, String.class);
+				System.out.println("<" + this.name + "> - Node with ID " + nodeID + " has IPAddress " + IPAddress);
+				return IPAddress;
+			} catch(Exception e) {
+				System.out.println("<" + this.name + "> - ERROR - Failed to find IPAddress of node with ID " + nodeID + " - " + e);
+				failure();
+				return "NotFound";
+			}
+		}
+
+		private void run() {
+			while (true) {
+				WatchKey k;
+				try {
+					k = file_daemon.take();
+				} catch (InterruptedException e) {
+					return;
+				}
+
+				for (WatchEvent<?> event : k.pollEvents()) {
+					WatchEvent.Kind<?> kind = event.kind();
+
+					if (kind == StandardWatchEventKinds.OVERFLOW) {
+						continue;
+					}
+
+					@SuppressWarnings("unchecked")
+					WatchEvent<Path> ev = (WatchEvent<Path>) event;
+					Path filename = ev.context();
+					Path child = folder_path.resolve(filename);
+
+					System.out.println(kind.name() + ": " + child);
+
+					throw new NotYetImplementedException("Notify replicator node!");
+				}
+
+				if (!k.reset())
+					break;
+			}
+		}
 }
