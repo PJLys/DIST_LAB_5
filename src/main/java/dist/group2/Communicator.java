@@ -1,28 +1,38 @@
 package dist.group2;
 
 import jakarta.annotation.PreDestroy;
+import net.minidev.json.JSONObject;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.ip.udp.MulticastReceivingChannelAdapter;
 import org.springframework.integration.ip.udp.UnicastReceivingChannelAdapter;
+import org.springframework.messaging.Message;
 
+import java.io.DataInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class Communicator {
     static MulticastSocket multicastSocket;
     static String multicastIP;
     static int multicastPort;
+    static int fileUnicastPort;
     static InetAddress multicastGroup;
     static UnicastReceivingChannelAdapter adapter;
     static int unicastReceivePortDiscovery;
 
-    public Communicator(InetAddress multicastGroup, int multicastPort, String multicastIP, int unicastReceivePortDiscovery) throws IOException {
+    public Communicator(InetAddress multicastGroup, int multicastPort, int fileUnicastPort, String multicastIP, int unicastReceivePortDiscovery) throws IOException {
         Communicator.multicastIP = multicastIP;
         Communicator.multicastGroup = multicastGroup;
         Communicator.multicastPort = multicastPort;
+        Communicator.fileUnicastPort = fileUnicastPort;
         Communicator.multicastSocket = new MulticastSocket();
         Communicator.unicastReceivePortDiscovery = unicastReceivePortDiscovery;
     }
@@ -82,7 +92,7 @@ public class Communicator {
 
     @Bean
     public UnicastReceivingChannelAdapter unicastReceiver() {
-        adapter = new UnicastReceivingChannelAdapter(unicastReceivePortDiscovery);
+        UnicastReceivingChannelAdapter adapter = new UnicastReceivingChannelAdapter(unicastReceivePortDiscovery);
         adapter.setOutputChannelName("DiscoveryUnicast");
         return adapter;
     }
@@ -90,5 +100,13 @@ public class Communicator {
     @PreDestroy
     public void shutdown() {
         multicastSocket.close();
+    }
+
+    // ----------------------------------------- FILE UNICAST RECEIVER -------------------------------------------------
+    @Bean
+    public UnicastReceivingChannelAdapter fileUnicastReceiver() {
+        UnicastReceivingChannelAdapter fileAdapter = new UnicastReceivingChannelAdapter(fileUnicastPort);
+        fileAdapter.setOutputChannelName("FileUnicast");
+        return fileAdapter;
     }
 }

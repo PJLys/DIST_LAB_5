@@ -22,9 +22,9 @@ public class ClientApplication {
         int namingPort = 8080;
         int fileUnicastPort = 4451;
 
-        Communicator communicator = new Communicator(multicastGroup, multicastPort, multicastIP, unicastPortDiscovery);
+        Communicator communicator = new Communicator(multicastGroup, multicastPort, fileUnicastPort, multicastIP, unicastPortDiscovery);
         DiscoveryClient discoveryClient = new DiscoveryClient(name, IPAddress, namingPort, unicastPortDiscovery);
-        ReplicationClient replicationClient = new ReplicationClient(name, fileUnicastPort);
+        ReplicationClient replicationClient = new ReplicationClient(fileUnicastPort);
 
 
         System.out.println("<---> " + name + " Instantiated with IP " + IPAddress + " <--->");
