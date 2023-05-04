@@ -154,6 +154,25 @@ public class ClientApplication {
 
 	@ServiceActivator(inputChannel = "FileUnicast")
 	public void serverUnicastEvent(Message<byte[]> message) {
+		// Read the length of the JSON data as a 4-byte integer in network byte order
+		DataInputStream dis = new DataInputStream(clientSocket.getInputStream()); int jsonLength = Integer.reverseBytes(dis.readInt());
+		// Read the JSON data into a byte array
+		byte[] jsonBytes = new byte[jsonLength]; dis.readFully(jsonBytes);
+		// Convert the JSON data to a string
+		String json = new String(jsonBytes, StandardCharsets.UTF_8);
+		// Parse the JSON data
+		JSONObject jo = new JSONObject(json);
+		// Extract the file name and data from the JSON object
+		String fileName = jo.getString("name"); byte[] fileData = jo.getBytes("data");
+		// Write the file data to disk
+		Path file_path = Path.of(folder_path.toString() + '\\' + fileName); Files.write(file_path, fileData);
+		// Close the client socket and server socket
+		clientSocket.close(); serverSocket.close();
+
+
+
+
+
 		try {
 			byte[] payload = message.getPayload();
 			FileOutputStream outputStream = new FileOutputStream("file.txt", true); // true for append mode
