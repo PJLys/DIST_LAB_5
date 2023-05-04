@@ -1,6 +1,8 @@
 package dist.group2;
 
 import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
+import net.minidev.json.parser.ParseException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.ip.udp.UnicastReceivingChannelAdapter;
@@ -12,6 +14,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ReplicationClient {
@@ -85,36 +88,46 @@ public class ReplicationClient {
     }
 
     // ----------------------------------------- FILE UNICAST RECEIVER -------------------------------------------------
+
+    /**
+     * Update a file when it has been remotely edited.
+     * @param message: Message received from the Communicator
+     */
     @ServiceActivator(inputChannel = "FileUnicast")
-    public void fileUnicastEvent(Message<byte[]> message) {
-        // Read the length of the JSON data as a 4-byte integer in network byte order
-        DataInputStream dis = new DataInputStream(clientSocket.getInputStream()); int jsonLength = Integer.reverseBytes(dis.readInt());
-        // Read the JSON data into a byte array
-        byte[] jsonBytes = new byte[jsonLength]; dis.readFully(jsonBytes);
-        // Convert the JSON data to a string
-        String json = new String(jsonBytes, StandardCharsets.UTF_8);
-        // Parse the JSON data
-        JSONObject jo = new JSONObject(json);
-        // Extract the file name and data from the JSON object
-        String fileName = jo.getString("name"); byte[] fileData = jo.getBytes("data");
-        // Write the file data to disk
-        Path file_path = Path.of(folder_path.toString() + '\\' + fileName); Files.write(file_path, fileData);
-        // Close the client socket and server socket
-        clientSocket.close(); serverSocket.close();
+    public int fileUnicastEvent(Message<byte[]> message) {
+        byte[] raw_data = message.getPayload();
+        JSONObject jo;
+        try {
+            JSONParser parser = new JSONParser();
+            jo = (JSONObject) parser.parse(raw_data);
+        } catch (ParseException e) {
+            System.out.println("Received message but failed to parse data!");
+            System.out.println("\tRaw data received: " + Arrays.toString(raw_data));
+            System.out.println("\n\tException: \n\t"+e.getMessage());
+            return -1;
+        }
 
-
-
-
+        FileOutputStream os;
+        try {
+            os = new FileOutputStream((String) jo.get("name"));
+        } catch (FileNotFoundException e) {
+            System.out.println("File not found!");
+            System.out.println("\tLooking for name "+jo.get("name")+ " using the method get('name') failed!");
+            System.out.println("\tCheck if 'name' is the right key in the object: " + jo);
+            System.out.println("\n\tException:\n\t"+e.getMessage());
+            return -1;
+        }
 
         try {
-            byte[] payload = message.getPayload();
-            FileOutputStream outputStream = new FileOutputStream("file.txt", true); // true for append mode
-            outputStream.write(payload);
-            outputStream.close();
-            System.out.println("Bytes appended to file successfully.");
+            os.write(message.getPayload());
+            os.close();
         } catch (IOException e) {
-            System.out.println("Error appending bytes to file: " + e.getMessage());
+            System.out.println("Failed to write to file "+jo.get("name")+"!");
+            System.out.println("\n\tException:\n\t"+e.getMessage());
+            return -1;
         }
+
+        return 0;
     }
 
 }
