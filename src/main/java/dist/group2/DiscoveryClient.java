@@ -24,6 +24,8 @@ public class DiscoveryClient {
         this.baseUrl = null;
         this.namingPort = namingPort;
         this.unicastPort = unicastPort;
+        this.previousID = hashValue(name);    // Set previousID to its own ID
+        this.nextID = hashValue(name);        // Set nextID to its own ID
     }
 
     public static Integer hashValue(String name) {
@@ -57,8 +59,6 @@ public class DiscoveryClient {
         int numberOfNodes = Integer.parseInt(rxData.split("\\|")[1]);
         System.out.println("Received answer to multicast from naming server - " + numberOfNodes + " node(s) in the network");
 
-        previousID = hashValue(name);    // Set previousID to its own ID
-        nextID = hashValue(name);        // Set nextID to its own ID
         if (numberOfNodes == 1) {
             System.out.println("<---> No other nodes present: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
         } else {
