@@ -28,7 +28,7 @@ public class Communicator {
     static UnicastReceivingChannelAdapter adapter;
     static int unicastReceivePortDiscovery;
 
-    public Communicator(InetAddress multicastGroup, int multicastPort, int fileUnicastPort, String multicastIP, int unicastReceivePortDiscovery) throws IOException {
+    public static void init(InetAddress multicastGroup, int multicastPort, int fileUnicastPort, String multicastIP, int unicastReceivePortDiscovery) throws IOException {
         Communicator.multicastIP = multicastIP;
         Communicator.multicastGroup = multicastGroup;
         Communicator.multicastPort = multicastPort;

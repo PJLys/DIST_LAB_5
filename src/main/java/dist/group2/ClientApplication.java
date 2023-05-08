@@ -1,5 +1,6 @@
 package dist.group2;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
@@ -10,8 +11,11 @@ import java.net.InetAddress;
 @SpringBootApplication
 public class ClientApplication {
     public static ApplicationContext context;
+    private DiscoveryClient discoveryClient;
 
-    public ClientApplication() throws IOException {
+    @Autowired
+    public ClientApplication(DiscoveryClient discoveryClient) throws IOException {
+        this.discoveryClient = discoveryClient;
         String name = InetAddress.getLocalHost().getHostName();
         String IPAddress = InetAddress.getLocalHost().getHostAddress();
 
@@ -22,20 +26,20 @@ public class ClientApplication {
         int namingPort = 8080;
         int fileUnicastPort = 4451;
 
-        Communicator communicator = new Communicator(multicastGroup, multicastPort, fileUnicastPort, multicastIP, unicastPortDiscovery);
-        DiscoveryClient discoveryClient = new DiscoveryClient(name, IPAddress, namingPort, unicastPortDiscovery);
-        ReplicationClient replicationClient = new ReplicationClient(fileUnicastPort);
+        Communicator.init(multicastGroup, multicastPort, fileUnicastPort, multicastIP, unicastPortDiscovery);
+        this.discoveryClient.init(name, IPAddress, namingPort, unicastPortDiscovery);
+//        ReplicationClient replicationClient = new ReplicationClient(fileUnicastPort);
 
 
         System.out.println("<---> " + name + " Instantiated with IP " + IPAddress + " <--->");
-        replicationClient.addFiles();
+//        replicationClient.addFiles();
         discoveryClient.bootstrap();
         NamingClient.setBaseUrl(discoveryClient.getBaseUrl());
         NamingClient.setName(name);
-        replicationClient.replicateFiles();
+//        replicationClient.replicateFiles();
 
-        Thread replicationthread = new Thread(replicationClient);
-        replicationthread.start();
+//        Thread replicationthread = new Thread(replicationClient);
+//        replicationthread.start();
     }
 
     public static void main(String[] args) {
