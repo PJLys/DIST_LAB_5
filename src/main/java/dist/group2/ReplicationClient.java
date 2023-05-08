@@ -23,7 +23,9 @@ import java.util.Date;
 
 public class ReplicationClient {
     private final int fileUnicastPort;
-    UnicastReceivingChannelAdapter fileAdapter;
+
+    private String nodeName = InetAddress.getLocalHost().getHostName();
+    private String IPAddress = InetAddress.getLocalHost().getHostAddress();UnicastReceivingChannelAdapter fileAdapter;
     WatchService file_daemon = FileSystems.getDefault().newWatchService();
     private final Path file_path = Path.of(new File("").getAbsolutePath().concat("\\src\\files"));  //Stores the local files that need to be replicated
     private final Path log_path = Path.of(new File("").getAbsolutePath().concat("\\src\\log_files"));  //Stores the local files that need to be replicated
@@ -68,16 +70,39 @@ public class ReplicationClient {
         return localFiles;
     }
 
+    public void shutdown() throws IOException {
+        // Send all files to the previous node
+        // Edge case: the previous node already stores the file locally
+        String previousNodeIP = NamingClient.findFile();
+        List<String> localFiles = new ArrayList<>();
+        File[] files = new File(file_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
+        for (File file : files) {
+            if (file.isFile()) {
+                String fileName = file.getName();
+                sendFile(fileName);
+            }
+        }
+
+        // Transfer log file to the new node
+        String log_file_path = "path";
+        String destinationIP = "IP";
+        sendFileToNode(log_file_path, destinationIP, false);
+    }
+
     public void sendFile(String fileName) throws IOException {    // Send file to replicated node
         // Get IP addr of replicator node
         // Find IP address of replicator node
         String replicator_loc = NamingClient.findFile(fileName);
+        sendFileToNode(fileName, replicator_loc, false);
+    }
 
+    public void sendFileToNode(String fileName, String nodeIP, boolean failure) throws IOException {    // Send file to replicated node
         // Create JSON object from File
         Path file_location = Path.of(file_path.toString() + '\\' + fileName);
         JSONObject jo = new JSONObject();
         jo.put("name", fileName);
         jo.put("data", Files.readAllBytes(file_location));
+        jo.put("failure", failure);
 
         // Write the JSON data into a buffer
         byte[] data = jo.toString().getBytes(StandardCharsets.UTF_8);
@@ -113,6 +138,12 @@ public class ReplicationClient {
             return -1;
         }
 
+        boolean failure = (boolean) jo.get("failure");
+        if (failure) {
+            // Joppe shit
+            return 0;
+        }
+
         FileOutputStream os_file;
         try {
             os_file = new FileOutputStream(file_path.toString() + '\\' + jo.get("name"));
@@ -146,10 +177,14 @@ public class ReplicationClient {
         }
 
         try {
+            // Get current timestamp
             Date date = new Date(System.currentTimeMillis());
             String formatted_date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
-            String text = "This node became the file owner on: " + formatted_date;
 
+            // Create the content of the file
+            String text = "Node " + nodeName + " with IP " + IPAddress + " became the file owner on: " + formatted_date;
+
+            // Write the file
             os_log.write(text.getBytes());
             os_log.close();
         } catch (IOException e) {
