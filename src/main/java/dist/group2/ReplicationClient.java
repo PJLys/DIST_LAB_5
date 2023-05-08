@@ -66,7 +66,7 @@ public class ReplicationClient implements Runnable{
         }
         return localFiles;
     }
-
+/*
     public void shutdown() throws IOException {
         // Send all files to the previous node
         // Edge case: the previous node already stores the file locally
@@ -94,6 +94,8 @@ public class ReplicationClient implements Runnable{
         String destinationIP = "IP";
         sendFileToNode(log_file_path, destinationIP, "none");
     }
+
+ */
 
     public void sendFile(String fileName, String extra_message) throws IOException {    // Send file to replicated node
         // Get IP addr of replicator node
@@ -230,14 +232,13 @@ public class ReplicationClient implements Runnable{
     }
 
     /**
-     * This method is used when a modify or create event is detected
+     * This method is used when an event is detected
      * @param event detected WatchEvent
      * @return error code
      */
     public int event_handler(WatchEvent<?> event) {
         Path filename = (Path) event.context();
-        Path filepath = file_path.resolve(filename);
-        System.out.println("File created: "+ filepath);
+        System.out.println("Event: "+ event.kind() + " Filename: "+ filename);
         System.out.println("Sending replication request");
         try {
             sendFile(filename.toString(), event.kind().toString());
