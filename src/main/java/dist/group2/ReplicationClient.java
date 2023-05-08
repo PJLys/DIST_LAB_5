@@ -14,10 +14,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Date;
+import java.util.*;
 
 
 public class ReplicationClient {
@@ -79,29 +76,40 @@ public class ReplicationClient {
             if (file.isFile()) {
                 String fileName = file.getName();
                 sendFile(fileName);
+                String destinationIP = NamingClient.findFile(fileName);
+                if (destinationIP == IPAddress) {
+                    System.out.println("Shutdown and this node is the owner of the file, no warning has to be sent");
+                } else {
+                    System.out.println("Shutdown and this node is not the owner of the file, warning has to be sent");
+                    sendFileToNode(fileName, destinationIP, "warning");
+                }
+
+
             }
         }
 
         // Transfer log file to the new node
         String log_file_path = "path";
         String destinationIP = "IP";
-        sendFileToNode(log_file_path, destinationIP, false);
+        sendFileToNode(log_file_path, destinationIP, "none");
     }
 
     public void sendFile(String fileName) throws IOException {    // Send file to replicated node
         // Get IP addr of replicator node
         // Find IP address of replicator node
         String replicator_loc = NamingClient.findFile(fileName);
-        sendFileToNode(fileName, replicator_loc, false);
+        sendFileToNode(fileName, replicator_loc, "none");
     }
 
-    public void sendFileToNode(String fileName, String nodeIP, boolean failure) throws IOException {    // Send file to replicated node
+    public void sendFileToNode(String fileName, String nodeIP, String extra_message) throws IOException {    // Send file to replicated node
         // Create JSON object from File
         Path file_location = Path.of(file_path.toString() + '\\' + fileName);
         JSONObject jo = new JSONObject();
         jo.put("name", fileName);
-        jo.put("data", Files.readAllBytes(file_location));
-        jo.put("failure", failure);
+        if (!Objects.equals(extra_message, "warning")) {
+            jo.put("data", Files.readAllBytes(file_location));
+        }
+        jo.put("extra_message", extra_message);
 
         // Write the JSON data into a buffer
         byte[] data = jo.toString().getBytes(StandardCharsets.UTF_8);
@@ -137,9 +145,10 @@ public class ReplicationClient {
             return -1;
         }
 
-        boolean failure = (boolean) jo.get("failure");
-        if (failure) {
+        String extra_message = (String) jo.get("extra_message");
+        if (Objects.equals(extra_message, "warning")) {
             // Joppe shit
+            System.out.println("I am the owner of " + jo.get("name") + " and got a warning.");
             return 0;
         }
 
