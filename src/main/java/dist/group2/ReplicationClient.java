@@ -103,7 +103,7 @@ public class ReplicationClient implements Runnable{
     }
 
     public void sendFileToNode(String fileName, String nodeIP, String extra_message) throws IOException {    // Send file to replicated node
-        // Create JSON object from File
+        // Create JSON object from Filegit c
         Path file_location = Path.of(file_path.toString() + '\\' + fileName);
         JSONObject jo = new JSONObject();
         jo.put("name", fileName);
@@ -115,8 +115,8 @@ public class ReplicationClient implements Runnable{
         // Write the JSON data into a buffer
         byte[] data = jo.toString().getBytes(StandardCharsets.UTF_8);
 
-        // Create TCP socket and
-        Socket tcp_socket = new Socket(InetAddress.getByName(replicator_loc), fileUnicastPort);
+        // Create TCP socket and output stream
+        Socket tcp_socket = new Socket(InetAddress.getByName(nodeIP), fileUnicastPort);
         OutputStream os = tcp_socket.getOutputStream();
 
         // Send data
@@ -148,7 +148,13 @@ public class ReplicationClient implements Runnable{
 
         String extra_message = (String) jo.get("extra_message");
         if (Objects.equals(extra_message, "warning")) {
-            // Joppe shit
+
+            if (wasDownloaded(file)) {
+
+            } else {
+
+            }
+
             System.out.println("I am the owner of " + jo.get("name") + " and got a warning.");
             return 0;
         }
@@ -203,6 +209,25 @@ public class ReplicationClient implements Runnable{
         }
 
         return 0;
+    }
+
+    public boolean wasDownloaded(String file_path) {
+        BufferedReader reader;
+
+        try {
+            reader = new BufferedReader(new FileReader("sample.txt"));
+            String line = reader.readLine();
+
+            while (line != null) {
+                System.out.println(line);
+                // read next line
+                line = reader.readLine();
+            }
+
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public int cm_event_handler(WatchEvent<?> event) {
