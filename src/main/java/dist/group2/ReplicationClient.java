@@ -69,9 +69,9 @@ public class ReplicationClient {
     public void shutdown() throws IOException {
         // Send all files to the previous node
         // Edge case: the previous node already stores the file locally
-        String previousNodeIP = NamingClient.findFile()
+        String previousNodeIP = NamingClient.findFile();
         List<String> localFiles = new ArrayList<>();
-        File[] files = new File(folder_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
+        File[] files = new File(file_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
         for (File file : files) {
             if (file.isFile()) {
                 String fileName = file.getName();
