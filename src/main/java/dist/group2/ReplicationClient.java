@@ -13,19 +13,23 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Date;
+
 
 public class ReplicationClient {
     private int fileUnicastPort;
     UnicastReceivingChannelAdapter fileAdapter;
-    private Path folder_path = Path.of(new File("").getAbsolutePath().concat("\\src\\files"));  //Stores the local files that need to be replicated
+    private Path file_path = Path.of(new File("").getAbsolutePath().concat("\\src\\files"));  //Stores the local files that need to be replicated
+    private Path log_path = Path.of(new File("").getAbsolutePath().concat("\\src\\log_files"));  //Stores the local files that need to be replicated
     private WatchService file_daemon = FileSystems.getDefault().newWatchService();
 
     public ReplicationClient(int fileUnicastPort) throws IOException {
         this.fileUnicastPort = fileUnicastPort;
-        this.folder_path.register(file_daemon,
+        this.file_path.register(file_daemon,
                 StandardWatchEventKinds.ENTRY_CREATE,
                 StandardWatchEventKinds.ENTRY_MODIFY,
                 StandardWatchEventKinds.ENTRY_DELETE);
@@ -44,7 +48,7 @@ public class ReplicationClient {
         String str = "Text";
         BufferedWriter writer;
         for (String fileName : fileNames) {
-            writer = new BufferedWriter(new FileWriter(folder_path.toString() + "\\" + fileName));
+            writer = new BufferedWriter(new FileWriter(file_path.toString() + "\\" + fileName));
             writer.write(str);
             writer.close();
         }
@@ -52,7 +56,7 @@ public class ReplicationClient {
 
     public List<String> replicateFiles() throws IOException {
         List<String> localFiles = new ArrayList<>();
-        File[] files = new File(folder_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
+        File[] files = new File(file_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
         for (File file : files) {
             if (file.isFile()) {
                 String fileName = file.getName();
@@ -85,10 +89,10 @@ public class ReplicationClient {
 
     public void sendFileToNode(String fileName, String nodeIP) throws IOException {    // Send file to replicated node
         // Create JSON object from File
-        Path file_path = Path.of(folder_path.toString() + '\\' + fileName);
+        Path file_location = Path.of(file_path.toString() + '\\' + fileName);
         JSONObject jo = new JSONObject();
         jo.put("name", fileName);
-        jo.put("data", Files.readAllBytes(file_path));
+        jo.put("data", Files.readAllBytes(file_location));
 
         // Write the JSON data into a buffer
         byte[] data = jo.toString().getBytes(StandardCharsets.UTF_8);
@@ -124,9 +128,9 @@ public class ReplicationClient {
             return -1;
         }
 
-        FileOutputStream os;
+        FileOutputStream os_file;
         try {
-            os = new FileOutputStream((String) jo.get("name"));
+            os_file = new FileOutputStream(file_path.toString() + '\\' + jo.get("name"));
         } catch (FileNotFoundException e) {
             System.out.println("File not found!");
             System.out.println("\tLooking for name "+jo.get("name")+ " using the method get('name') failed!");
@@ -136,12 +140,37 @@ public class ReplicationClient {
         }
 
         try {
-            os.write(message.getPayload());
-            os.close();
+            os_file.write(message.getPayload());
+            os_file.close();
         } catch (IOException e) {
             System.out.println("Failed to write to file "+jo.get("name")+"!");
             System.out.println("\n\tException:\n\t"+e.getMessage());
             return -1;
+        }
+
+
+        FileOutputStream os_log;
+        try {
+            os_log = new FileOutputStream(log_path.toString() + '\\' + jo.get("name") + ".log", true);
+        } catch (FileNotFoundException e) {
+            System.out.println("Log file not found!");
+            System.out.println("\tLooking for name "+jo.get("name")+ ".log using the method get('name') failed!");
+            System.out.println("\tCheck if 'name' is the right key in the object: " + jo);
+            System.out.println("\n\tException:\n\t"+e.getMessage());
+            return -2;
+        }
+
+        try {
+            Date date = new Date(System.currentTimeMillis());
+            String formatted_date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
+            String text = "This node became the file owner on: " + formatted_date;
+
+            os_log.write(text.getBytes());
+            os_log.close();
+        } catch (IOException e) {
+            System.out.println("Failed to write to log file "+jo.get("name")+".log!");
+            System.out.println("\n\tException:\n\t"+e.getMessage());
+            return -2;
         }
 
         return 0;
