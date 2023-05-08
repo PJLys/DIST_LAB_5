@@ -61,7 +61,7 @@ public class ReplicationClient implements Runnable{
         for (File file : files) {
             if (file.isFile()) {
                 String fileName = file.getName();
-                sendFile(fileName);
+                sendFile(fileName, "init");
             }
         }
         return localFiles;
@@ -76,7 +76,7 @@ public class ReplicationClient implements Runnable{
         for (File file : files) {
             if (file.isFile()) {
                 String fileName = file.getName();
-                sendFile(fileName);
+                sendFile(fileName, "shutdown");
                 String destinationIP = NamingClient.findFile(fileName);
                 if (destinationIP == IPAddress) {
                     System.out.println("Shutdown and this node is the owner of the file, no warning has to be sent");
@@ -95,11 +95,11 @@ public class ReplicationClient implements Runnable{
         sendFileToNode(log_file_path, destinationIP, "none");
     }
 
-    public void sendFile(String fileName) throws IOException {    // Send file to replicated node
+    public void sendFile(String fileName, String extra_message) throws IOException {    // Send file to replicated node
         // Get IP addr of replicator node
         // Find IP address of replicator node
         String replicator_loc = NamingClient.findFile(fileName);
-        sendFileToNode(fileName, replicator_loc, "none");
+        sendFileToNode(fileName, replicator_loc, extra_message);
     }
 
     public void sendFileToNode(String fileName, String nodeIP, String extra_message) throws IOException {    // Send file to replicated node
@@ -213,7 +213,6 @@ public class ReplicationClient implements Runnable{
 
     public boolean wasDownloaded(String file_path) {
         BufferedReader reader;
-
         try {
             reader = new BufferedReader(new FileReader("sample.txt"));
             String line = reader.readLine();
@@ -230,13 +229,18 @@ public class ReplicationClient implements Runnable{
         }
     }
 
-    public int cm_event_handler(WatchEvent<?> event) {
+    /**
+     * This method is used when a modify or create event is detected
+     * @param event detected WatchEvent
+     * @return error code
+     */
+    public int event_handler(WatchEvent<?> event) {
         Path filename = (Path) event.context();
         Path filepath = file_path.resolve(filename);
         System.out.println("File created: "+ filepath);
         System.out.println("Sending replication request");
         try {
-            sendFile(filename.toString());
+            sendFile(filename.toString(), event.kind().toString());
         } catch (IOException e) {
             System.out.println("Failed to send file!");
             System.out.println("\nException: \n\t");
@@ -246,26 +250,13 @@ public class ReplicationClient implements Runnable{
         return 0;
     }
 
-    public int del_event_handler(WatchEvent<?> event) {
-        throw new NotYetImplementedException("delete event handler moet nog gemaakt worden!");
-    }
-
-    public void run() throws UnexpectedException {
+    public void run() {
         WatchKey watchKey;
         while (true) {
-            watchKey = file_daemon.poll(); // Could use .take() but this blocks the loop and
+            watchKey = file_daemon.poll(); // Could use .take() but this blocks the loop
             if (watchKey!= null) {
                 for (WatchEvent<?> event:watchKey.pollEvents()){
-                    switch (event.kind().name()) {
-                        case "ENTRY_CREATE", "ENTRY_MODIFY" -> {
-                            cm_event_handler(event);
-                        }
-                        case "ENTRY_DELETE" -> {
-                            del_event_handler(event);
-                        }
-                        default ->
-                            throw new UnexpectedException("Unexpected event!"+event.kind());
-                    }
+                    event_handler(event);
                 }
                 watchKey.reset();
             }
