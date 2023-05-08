@@ -62,11 +62,28 @@ public class ReplicationClient {
         return localFiles;
     }
 
+    public void shutdown() throws IOException {
+        // Send all files to the previous node
+        // Edge case: the previous node already stores the file locally
+        String previousNodeIP = NamingClient.findFile()
+        List<String> localFiles = new ArrayList<>();
+        File[] files = new File(folder_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
+        for (File file : files) {
+            if (file.isFile()) {
+                String fileName = file.getName();
+                sendFile(fileName);
+            }
+        }
+    }
+
     public void sendFile(String fileName) throws IOException {    // Send file to replicated node
         // Get IP addr of replicator node
         // Find IP address of replicator node
         String replicator_loc = NamingClient.findFile(fileName);
+        sendFileToNode(fileName, replicator_loc);
+    }
 
+    public void sendFileToNode(String fileName, String nodeIP) throws IOException {    // Send file to replicated node
         // Create JSON object from File
         Path file_path = Path.of(folder_path.toString() + '\\' + fileName);
         JSONObject jo = new JSONObject();
@@ -77,7 +94,7 @@ public class ReplicationClient {
         byte[] data = jo.toString().getBytes(StandardCharsets.UTF_8);
 
         // Create TCP socket and
-        Socket tcp_socket = new Socket(InetAddress.getByName(replicator_loc), fileUnicastPort);
+        Socket tcp_socket = new Socket(InetAddress.getByName(nodeIP), fileUnicastPort);
         OutputStream os = tcp_socket.getOutputStream();
 
         // Send data
