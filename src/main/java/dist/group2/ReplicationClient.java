@@ -3,7 +3,7 @@ package dist.group2;
 import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
-import org.springframework.context.annotation.Bean;
+import org.hibernate.cfg.NotYetImplementedException;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.ip.udp.UnicastReceivingChannelAdapter;
 import org.springframework.messaging.Message;
@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.rmi.UnexpectedException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,11 +22,11 @@ import java.util.Date;
 
 
 public class ReplicationClient {
-    private int fileUnicastPort;
+    private final int fileUnicastPort;
     UnicastReceivingChannelAdapter fileAdapter;
-    private Path file_path = Path.of(new File("").getAbsolutePath().concat("\\src\\files"));  //Stores the local files that need to be replicated
-    private Path log_path = Path.of(new File("").getAbsolutePath().concat("\\src\\log_files"));  //Stores the local files that need to be replicated
-    private WatchService file_daemon = FileSystems.getDefault().newWatchService();
+    WatchService file_daemon = FileSystems.getDefault().newWatchService();
+    private final Path file_path = Path.of(new File("").getAbsolutePath().concat("\\src\\files"));  //Stores the local files that need to be replicated
+    private final Path log_path = Path.of(new File("").getAbsolutePath().concat("\\src\\log_files"));  //Stores the local files that need to be replicated
 
     public ReplicationClient(int fileUnicastPort) throws IOException {
         this.fileUnicastPort = fileUnicastPort;
@@ -57,6 +58,7 @@ public class ReplicationClient {
     public List<String> replicateFiles() throws IOException {
         List<String> localFiles = new ArrayList<>();
         File[] files = new File(file_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
+        assert files != null;
         for (File file : files) {
             if (file.isFile()) {
                 String fileName = file.getName();
@@ -157,6 +159,49 @@ public class ReplicationClient {
         }
 
         return 0;
+    }
+
+    public int cm_event_handler(WatchEvent<?> event) {
+        Path filename = (Path) event.context();
+        Path filepath = file_path.resolve(filename);
+        System.out.println("File created: "+ filepath);
+        System.out.println("Sending replication request");
+        try {
+            sendFile(filename.toString());
+        } catch (IOException e) {
+            System.out.println("Failed to send file!");
+            System.out.println("\nException: \n\t");
+            System.out.println(e.getMessage());
+            return -1;
+        }
+        return 0;
+    }
+
+    public int del_event_handler(WatchEvent<?> event) {
+        throw new NotYetImplementedException("delete event handler moet nog gemaakt worden!");
+    }
+
+    public int run() throws UnexpectedException {
+        WatchKey watchKey;
+        while (true) {
+            watchKey = file_daemon.poll(); // Could use .take() but this blocks the loop and
+            if (watchKey!= null) {
+                for (WatchEvent<?> event:watchKey.pollEvents()){
+                    switch (event.kind().name()) {
+                        case "ENTRY_CREATE", "ENTRY_MODIFY" -> {
+                            return cm_event_handler(event);
+                        }
+                        case "ENTRY_DELETE" -> {
+                            return del_event_handler(event);
+                        }
+                        default ->
+                            throw new UnexpectedException("Unexpected event!"+event.kind());
+                    }
+                }
+                watchKey.reset();
+
+            }
+        }
     }
 
 }
