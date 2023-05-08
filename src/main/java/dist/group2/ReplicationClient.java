@@ -24,12 +24,14 @@ public class ReplicationClient implements Runnable{
     private String nodeName = InetAddress.getLocalHost().getHostName();
     private String IPAddress = InetAddress.getLocalHost().getHostAddress();UnicastReceivingChannelAdapter fileAdapter;
     WatchService file_daemon = FileSystems.getDefault().newWatchService();
-    private final Path file_path = Path.of(new File("").getAbsolutePath().concat("\\src\\files"));  //Stores the local files that need to be replicated
+    private final Path local_file_path = Path.of(new File("").getAbsolutePath().concat("\\src\\local_files"));  //Stores the local files that need to be replicated
+    private final Path replicated_file_path = Path.of(new File("").getAbsolutePath().concat("\\src\\replicated_files"));  //Stores the local files that need to be replicated
+
     private final Path log_path = Path.of(new File("").getAbsolutePath().concat("\\src\\log_files"));  //Stores the local files that need to be replicated
 
     public ReplicationClient(int fileUnicastPort) throws IOException {
         this.fileUnicastPort = fileUnicastPort;
-        this.file_path.register(file_daemon,
+        this.local_file_path.register(file_daemon,
                 StandardWatchEventKinds.ENTRY_CREATE,
                 StandardWatchEventKinds.ENTRY_MODIFY,
                 StandardWatchEventKinds.ENTRY_DELETE);
@@ -48,7 +50,7 @@ public class ReplicationClient implements Runnable{
         String str = "Text";
         BufferedWriter writer;
         for (String fileName : fileNames) {
-            writer = new BufferedWriter(new FileWriter(file_path.toString() + "\\" + fileName));
+            writer = new BufferedWriter(new FileWriter(local_file_path.toString() + "\\" + fileName));
             writer.write(str);
             writer.close();
         }
@@ -56,59 +58,54 @@ public class ReplicationClient implements Runnable{
 
     public List<String> replicateFiles() throws IOException {
         List<String> localFiles = new ArrayList<>();
-        File[] files = new File(file_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
+        File[] files = new File(local_file_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
         assert files != null;
         for (File file : files) {
             if (file.isFile()) {
                 String fileName = file.getName();
-                sendFile(fileName, "init");
+                sendFile( local_file_path.toString() + '\\' + fileName, "init");
             }
         }
         return localFiles;
     }
-/*
+
     public void shutdown() throws IOException {
         // Send all files to the previous node
         // Edge case: the previous node already stores the file locally
         String previousNodeIP = NamingClient.findFile();
         List<String> localFiles = new ArrayList<>();
-        File[] files = new File(file_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
+        File[] files = new File(file_path.toString()).listFiles(); //If this pathname does not denote a directory, then listFiles() returns null.
         for (File file : files) {
             if (file.isFile()) {
                 String fileName = file.getName();
-                sendFile(fileName, "shutdown");
+                // sendFile(fileName, "shutdown");
                 String destinationIP = NamingClient.findFile(fileName);
+
+                // Transfer log file to the new node
                 if (destinationIP == IPAddress) {
-                    System.out.println("Shutdown and this node is the owner of the file, no warning has to be sent");
+                    System.out.println("Shutdown and this node is the owner of the file, send warning to previous node");
+                    sendFileToNode(log_path.toString() +  + '\\' + fileName, previousNodeIP, "warning");
                 } else {
-                    System.out.println("Shutdown and this node is not the owner of the file, warning has to be sent");
-                    sendFileToNode(fileName, destinationIP, "warning");
+                    System.out.println("Shutdown and this node is not the owner of the file, send warning has to owner of the file");
+                    // Transfer log file to the new node
+                    sendFileToNode(log_path.toString() +  + '\\' + fileName, destinationIP, "warning");
                 }
-
-
             }
         }
-
-        // Transfer log file to the new node
-        String log_file_path = "path";
-        String destinationIP = "IP";
-        sendFileToNode(log_file_path, destinationIP, "none");
     }
 
- */
-
-    public void sendFile(String fileName, String extra_message) throws IOException {    // Send file to replicated node
+    public void sendFile(String filePath, String extra_message) throws IOException {    // Send file to replicated node
         // Get IP addr of replicator node
         // Find IP address of replicator node
-        String replicator_loc = NamingClient.findFile(fileName);
-        sendFileToNode(fileName, replicator_loc, extra_message);
+        String replicator_loc = NamingClient.findFile(Path.of(filePath).getFileName().toString());
+        sendFileToNode(filePath, replicator_loc, extra_message);
     }
 
-    public void sendFileToNode(String fileName, String nodeIP, String extra_message) throws IOException {    // Send file to replicated node
+    public void sendFileToNode(String filePath, String nodeIP, String extra_message) throws IOException {    // Send file to replicated node
         // Create JSON object from Filegit c
-        Path file_location = Path.of(file_path.toString() + '\\' + fileName);
+        Path file_location = Path.of(filePath);
         JSONObject jo = new JSONObject();
-        jo.put("name", fileName);
+        jo.put("name", file_location.getFileName().toString());
         if (!Objects.equals(extra_message, "warning")) {
             jo.put("data", Files.readAllBytes(file_location));
         }
@@ -135,7 +132,7 @@ public class ReplicationClient implements Runnable{
      * @param message: Message received from the Communicator
      */
     @ServiceActivator(inputChannel = "FileUnicast")
-    public int fileUnicastEvent(Message<byte[]> message) {
+    public int fileUnicastEvent(Message<byte[]> message) throws IOException {
         byte[] raw_data = message.getPayload();
         JSONObject jo;
         try {
@@ -148,25 +145,62 @@ public class ReplicationClient implements Runnable{
             return -1;
         }
 
+        String fileName = (String) jo.get("extra_message");
         String extra_message = (String) jo.get("extra_message");
+        String file_path = log_path.toString() + '\\' + fileName;
         if (Objects.equals(extra_message, "warning")) {
+            System.out.println("I am the owner of " + fileName + " and got a warning.");
+            if (wasDownloaded(file_path)) {
+                // Update the log file with the download locations
+                System.out.println(fileName + " contains a download of the file, update the log file");
 
-            if (wasDownloaded(file)) {
+                FileOutputStream os_log;
+                try {
+                    os_log = new FileOutputStream(log_path.toString() + '\\' + fileName + ".log", true);
+                } catch (FileNotFoundException e) {
+                    System.out.println("Log file not found!");
+                    System.out.println("\tLooking for name "+fileName+ ".log using the method get('name') failed!");
+                    System.out.println("\tCheck if 'name' is the right key in the object: " + jo);
+                    System.out.println("\n\tException:\n\t"+e.getMessage());
+                    return -2;
+                }
 
+                try {
+                    // Get current timestamp
+                    Date date = new Date(System.currentTimeMillis());
+                    String formatted_date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
+
+                    // Create the content of the file
+                    String update_text = "Update of this log file happened due to change of owner at: " + formatted_date + "\n";
+
+                    // Write the text that indicates that the log is update
+                    os_log.write(update_text.getBytes());
+
+                    // Append the lines of the old log file
+                    os_log.write(message.getPayload());
+
+                    // Close the output stream
+                    os_log.close();
+                } catch (IOException e) {
+                    System.out.println("Failed to write to log file "+fileName+".log!");
+                    System.out.println("\n\tException:\n\t"+e.getMessage());
+                    return -2;
+                }
             } else {
-
+                // This log file can be removed since the file was never downloaded
+                System.out.println(fileName + " contains no download of the file, remove the log file");
+                Files.deleteIfExists(Path.of(file_path));
             }
 
-            System.out.println("I am the owner of " + jo.get("name") + " and got a warning.");
             return 0;
         }
 
         FileOutputStream os_file;
         try {
-            os_file = new FileOutputStream(file_path.toString() + '\\' + jo.get("name"));
+            os_file = new FileOutputStream(replicated_file_path.toString() + '\\' + fileName);
         } catch (FileNotFoundException e) {
             System.out.println("File not found!");
-            System.out.println("\tLooking for name "+jo.get("name")+ " using the method get('name') failed!");
+            System.out.println("\tLooking for name "+fileName+ " using the method get('name') failed!");
             System.out.println("\tCheck if 'name' is the right key in the object: " + jo);
             System.out.println("\n\tException:\n\t"+e.getMessage());
             return -1;
@@ -176,7 +210,7 @@ public class ReplicationClient implements Runnable{
             os_file.write(message.getPayload());
             os_file.close();
         } catch (IOException e) {
-            System.out.println("Failed to write to file "+jo.get("name")+"!");
+            System.out.println("Failed to write to file "+fileName+"!");
             System.out.println("\n\tException:\n\t"+e.getMessage());
             return -1;
         }
@@ -184,10 +218,10 @@ public class ReplicationClient implements Runnable{
 
         FileOutputStream os_log;
         try {
-            os_log = new FileOutputStream(log_path.toString() + '\\' + jo.get("name") + ".log", true);
+            os_log = new FileOutputStream(log_path.toString() + '\\' + fileName + ".log", true);
         } catch (FileNotFoundException e) {
             System.out.println("Log file not found!");
-            System.out.println("\tLooking for name "+jo.get("name")+ ".log using the method get('name') failed!");
+            System.out.println("\tLooking for name "+fileName+ ".log using the method get('name') failed!");
             System.out.println("\tCheck if 'name' is the right key in the object: " + jo);
             System.out.println("\n\tException:\n\t"+e.getMessage());
             return -2;
@@ -199,13 +233,13 @@ public class ReplicationClient implements Runnable{
             String formatted_date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
 
             // Create the content of the file
-            String text = "Node " + nodeName + " with IP " + IPAddress + " became the file owner on: " + formatted_date;
+            String text = "Node " + nodeName + " with IP " + IPAddress + " became the file owner on: " + formatted_date + "\n";
 
             // Write the file
             os_log.write(text.getBytes());
             os_log.close();
         } catch (IOException e) {
-            System.out.println("Failed to write to log file "+jo.get("name")+".log!");
+            System.out.println("Failed to write to log file "+fileName+".log!");
             System.out.println("\n\tException:\n\t"+e.getMessage());
             return -2;
         }
@@ -216,19 +250,24 @@ public class ReplicationClient implements Runnable{
     public boolean wasDownloaded(String file_path) {
         BufferedReader reader;
         try {
-            reader = new BufferedReader(new FileReader("sample.txt"));
+            reader = new BufferedReader(new FileReader(file_path));
             String line = reader.readLine();
 
             while (line != null) {
                 System.out.println(line);
                 // read next line
                 line = reader.readLine();
+                if (line.contains("ownload")) { // Check if the line contains a download
+                    return true;
+                }
             }
 
             reader.close();
         } catch (IOException e) {
             e.printStackTrace();
+            throw new NotYetImplementedException("Danku Ibe, wij houden van u! ;)");
         }
+        return false;
     }
 
     /**
@@ -238,10 +277,11 @@ public class ReplicationClient implements Runnable{
      */
     public int event_handler(WatchEvent<?> event) {
         Path filename = (Path) event.context();
-        System.out.println("Event: "+ event.kind() + " Filename: "+ filename);
+        Path filepath = local_file_path.resolve(filename);
+        System.out.println("File created: "+ filepath);
         System.out.println("Sending replication request");
         try {
-            sendFile(filename.toString(), event.kind().toString());
+            sendFile( local_file_path.toString() + '\\' + filename.toString(), event.kind().toString());
         } catch (IOException e) {
             System.out.println("Failed to send file!");
             System.out.println("\nException: \n\t");
