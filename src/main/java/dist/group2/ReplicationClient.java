@@ -18,7 +18,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 
-public class ReplicationClient {
+public class ReplicationClient implements Runnable{
     private final int fileUnicastPort;
 
     private String nodeName = InetAddress.getLocalHost().getHostName();
@@ -225,7 +225,7 @@ public class ReplicationClient {
         throw new NotYetImplementedException("delete event handler moet nog gemaakt worden!");
     }
 
-    public int run() throws UnexpectedException {
+    public void run() throws UnexpectedException {
         WatchKey watchKey;
         while (true) {
             watchKey = file_daemon.poll(); // Could use .take() but this blocks the loop and
@@ -233,17 +233,16 @@ public class ReplicationClient {
                 for (WatchEvent<?> event:watchKey.pollEvents()){
                     switch (event.kind().name()) {
                         case "ENTRY_CREATE", "ENTRY_MODIFY" -> {
-                            return cm_event_handler(event);
+                            cm_event_handler(event);
                         }
                         case "ENTRY_DELETE" -> {
-                            return del_event_handler(event);
+                            del_event_handler(event);
                         }
                         default ->
                             throw new UnexpectedException("Unexpected event!"+event.kind());
                     }
                 }
                 watchKey.reset();
-
             }
         }
     }
