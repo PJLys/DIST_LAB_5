@@ -21,6 +21,9 @@ import java.util.Date;
 
 
 public class ReplicationClient {
+
+    private String nodeName = InetAddress.getLocalHost().getHostName();
+    private String IPAddress = InetAddress.getLocalHost().getHostAddress();
     private int fileUnicastPort;
     UnicastReceivingChannelAdapter fileAdapter;
     private Path file_path = Path.of(new File("").getAbsolutePath().concat("\\src\\files"));  //Stores the local files that need to be replicated
@@ -78,6 +81,8 @@ public class ReplicationClient {
                 sendFile(fileName);
             }
         }
+
+        // Transfer log file to the new node
     }
 
     public void sendFile(String fileName) throws IOException {    // Send file to replicated node
@@ -161,10 +166,14 @@ public class ReplicationClient {
         }
 
         try {
+            // Get current timestamp
             Date date = new Date(System.currentTimeMillis());
             String formatted_date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
-            String text = "This node became the file owner on: " + formatted_date;
 
+            // Create the content of the file
+            String text = "Node " + nodeName + " with IP " + IPAddress + " became the file owner on: " + formatted_date;
+
+            // Write the file
             os_log.write(text.getBytes());
             os_log.close();
         } catch (IOException e) {
