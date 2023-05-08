@@ -148,7 +148,13 @@ public class ReplicationClient {
 
         String extra_message = (String) jo.get("extra_message");
         if (Objects.equals(extra_message, "warning")) {
-            // Joppe shit
+
+            if (wasDownloaded(file)) {
+
+            } else {
+
+            }
+
             System.out.println("I am the owner of " + jo.get("name") + " and got a warning.");
             return 0;
         }
@@ -203,6 +209,25 @@ public class ReplicationClient {
         }
 
         return 0;
+    }
+
+    public boolean wasDownloaded(String file_path) {
+        BufferedReader reader;
+
+        try {
+            reader = new BufferedReader(new FileReader("sample.txt"));
+            String line = reader.readLine();
+
+            while (line != null) {
+                System.out.println(line);
+                // read next line
+                line = reader.readLine();
+            }
+
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public int cm_event_handler(WatchEvent<?> event) {
