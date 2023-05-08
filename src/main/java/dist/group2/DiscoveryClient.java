@@ -2,6 +2,7 @@ package dist.group2;
 
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.Message;
@@ -13,7 +14,6 @@ import java.util.Arrays;
 
 @Service
 public class DiscoveryClient {
-    private ApplicationContext context;
     private int previousID;
     private int nextID;
     private String name;
@@ -23,10 +23,6 @@ public class DiscoveryClient {
     private String baseUrl;
     private boolean shuttingDown = false;
 
-    @Autowired
-    public DiscoveryClient(ApplicationContext context) {
-        this.context = context;
-    }
     public void init(String name, String IPAddress, int unicastPort, int namingPort) {
         this.name = name;
         this.IPAddress = IPAddress;
@@ -45,12 +41,19 @@ public class DiscoveryClient {
         return baseUrl;
     }
 
-    public void bootstrap() throws IOException {
+    public void bootstrap() {
+        failure();
         System.out.println("<---> " + name + " Bootstrap <--->");
         // Send multicast to other nodes and naming server
         String data = name + "|" + IPAddress;
         System.out.println("<---> " + name + " Discovery Multicast Sending <--->");
-        Communicator.sendMulticast(data);
+        try {
+            Communicator.sendMulticast(data);
+        }
+        catch (IOException e) {
+            System.out.println("Failed to send multicast");
+            failure();
+        }
 
         // Listen for a response with the number of nodes & IP address of the naming server
         int receiveUnicastPort = 4447;
@@ -123,7 +126,7 @@ public class DiscoveryClient {
     public void failure() {
         if (!shuttingDown) {
             System.out.println("<---> " + this.name + " Failure <--->");
-            shutdown();
+            SpringApplication.exit(ClientApplication.context);
         }
     }
 
