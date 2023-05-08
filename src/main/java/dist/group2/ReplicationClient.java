@@ -83,21 +83,25 @@ public class ReplicationClient {
         }
 
         // Transfer log file to the new node
+        String log_file_path = "path";
+        String destinationIP = "IP";
+        sendFileToNode(log_file_path, destinationIP, false);
     }
 
     public void sendFile(String fileName) throws IOException {    // Send file to replicated node
         // Get IP addr of replicator node
         // Find IP address of replicator node
         String replicator_loc = NamingClient.findFile(fileName);
-        sendFileToNode(fileName, replicator_loc);
+        sendFileToNode(fileName, replicator_loc, false);
     }
 
-    public void sendFileToNode(String fileName, String nodeIP) throws IOException {    // Send file to replicated node
+    public void sendFileToNode(String fileName, String nodeIP, boolean failure) throws IOException {    // Send file to replicated node
         // Create JSON object from File
         Path file_location = Path.of(file_path.toString() + '\\' + fileName);
         JSONObject jo = new JSONObject();
         jo.put("name", fileName);
         jo.put("data", Files.readAllBytes(file_location));
+        jo.put("failure", failure);
 
         // Write the JSON data into a buffer
         byte[] data = jo.toString().getBytes(StandardCharsets.UTF_8);
@@ -131,6 +135,12 @@ public class ReplicationClient {
             System.out.println("\tRaw data received: " + Arrays.toString(raw_data));
             System.out.println("\n\tException: \n\t"+e.getMessage());
             return -1;
+        }
+
+        boolean failure = (boolean) jo.get("failure");
+        if (failure) {
+            // Joppe shit
+            return 0;
         }
 
         FileOutputStream os_file;
