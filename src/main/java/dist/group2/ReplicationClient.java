@@ -103,7 +103,7 @@ public class ReplicationClient {
     }
 
     public void sendFileToNode(String fileName, String nodeIP, String extra_message) throws IOException {    // Send file to replicated node
-        // Create JSON object from File
+        // Create JSON object from Filegit c
         Path file_location = Path.of(file_path.toString() + '\\' + fileName);
         JSONObject jo = new JSONObject();
         jo.put("name", fileName);
@@ -115,8 +115,8 @@ public class ReplicationClient {
         // Write the JSON data into a buffer
         byte[] data = jo.toString().getBytes(StandardCharsets.UTF_8);
 
-        // Create TCP socket and
-        Socket tcp_socket = new Socket(InetAddress.getByName(replicator_loc), fileUnicastPort);
+        // Create TCP socket and output stream
+        Socket tcp_socket = new Socket(InetAddress.getByName(nodeIP), fileUnicastPort);
         OutputStream os = tcp_socket.getOutputStream();
 
         // Send data
