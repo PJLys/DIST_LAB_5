@@ -261,6 +261,7 @@ public class ReplicationClient implements Runnable{
                 }
                 watchKey.reset();
             }
+            Thread.yield();
         }
     }
 
