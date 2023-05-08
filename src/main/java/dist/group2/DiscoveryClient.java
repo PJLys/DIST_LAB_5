@@ -1,24 +1,33 @@
 package dist.group2;
 
 import jakarta.annotation.PreDestroy;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.Message;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.util.Arrays;
 
+@Service
 public class DiscoveryClient {
-    private static int previousID;
-    private static int nextID;
-    private final String name;
-    private final String IPAddress;
-    private final int namingPort;
-    private final int unicastPort;
+    private ApplicationContext context;
+    private int previousID;
+    private int nextID;
+    private String name;
+    private String IPAddress;
+    private int namingPort;
+    private int unicastPort;
     private String baseUrl;
     private boolean shuttingDown = false;
 
-    public DiscoveryClient(String name, String IPAddress, int unicastPort, int namingPort) {
+    @Autowired
+    public DiscoveryClient(ApplicationContext context) {
+        this.context = context;
+    }
+    public void init(String name, String IPAddress, int unicastPort, int namingPort) {
         this.name = name;
         this.IPAddress = IPAddress;
         this.baseUrl = null;

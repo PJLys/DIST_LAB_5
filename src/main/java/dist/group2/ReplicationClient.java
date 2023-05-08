@@ -271,7 +271,7 @@ public class ReplicationClient implements Runnable{
     }
 
     /**
-     * This method is used when a modify or create event is detected
+     * This method is used when an event is detected
      * @param event detected WatchEvent
      * @return error code
      */
@@ -301,6 +301,7 @@ public class ReplicationClient implements Runnable{
                 }
                 watchKey.reset();
             }
+            Thread.yield();
         }
     }
 
