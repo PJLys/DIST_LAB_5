@@ -215,7 +215,6 @@ public class ReplicationClient implements Runnable{
             return -1;
         }
 
-
         FileOutputStream os_log;
         try {
             os_log = new FileOutputStream(log_path.toString() + '\\' + fileName + ".log", true);
