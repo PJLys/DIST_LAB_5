@@ -36,12 +36,18 @@ public class ClientApplication {
         NamingClient.setBaseUrl(discoveryClient.getBaseUrl());
         NamingClient.setName(name);
 
+        System.out.println(1);
         replicationClient.addFiles();
+        System.out.println(2);
         replicationClient.setFileDirectoryWatchDog();
+        System.out.println(3);
         replicationClient.replicateFiles();
+        System.out.println(4);
 
         Thread replicationthread = new Thread(replicationClient);
+        System.out.println(5);
         replicationthread.start();
+        System.out.println(6);
     }
 
     public static void main(String[] args) {

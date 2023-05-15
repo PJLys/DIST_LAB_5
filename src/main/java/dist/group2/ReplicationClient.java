@@ -80,15 +80,12 @@ public class ReplicationClient implements Runnable{
 
     // Create files to store on this node
     public void addFiles() throws IOException {
-        System.out.println(2);
         String name = InetAddress.getLocalHost().getHostName();
         // Create 3 file names to add
         ArrayList<String> fileNames = new ArrayList<>();
         fileNames.add(name + "_1");
         fileNames.add(name + "_2");
         fileNames.add(name + "_3");
-
-        System.out.println(3);
 
         // Create the files
         String str = "Text";
