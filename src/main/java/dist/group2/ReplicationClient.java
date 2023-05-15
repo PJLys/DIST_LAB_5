@@ -122,10 +122,12 @@ public class ReplicationClient implements Runnable{
     }
 
     public List<String> replicateFiles() throws IOException {
+        System.out.println("replicate files");
         List<String> localFiles = new ArrayList<>();
         File[] files = new File(local_file_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
         assert files != null;
         for (File file : files) {
+            System.out.println(file.toString());
             if (file.isFile()) {
                 String fileName = file.getName();
                 String filePath = local_file_path.toString() + '\\' + fileName;
