@@ -37,10 +37,18 @@ public class ReplicationClient implements Runnable{
     public void setFileDirectoryWatchDog() throws IOException {
 
         System.out.println("before");
-        this.local_file_path.register(file_daemon,
-                StandardWatchEventKinds.ENTRY_CREATE,
-                StandardWatchEventKinds.ENTRY_MODIFY,
-                StandardWatchEventKinds.ENTRY_DELETE);
+        System.out.println(local_file_path);
+
+        try {
+            this.local_file_path.register(file_daemon,
+                    StandardWatchEventKinds.ENTRY_CREATE,
+                    StandardWatchEventKinds.ENTRY_MODIFY,
+                    StandardWatchEventKinds.ENTRY_DELETE);
+        } catch (Exception e) {
+            System.out.println("Failed to send file!");
+            System.out.println("\nException: \n\t");
+            System.out.println(e.getMessage());
+        }
 
         System.out.println("after");
     }
