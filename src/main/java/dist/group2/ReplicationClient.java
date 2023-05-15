@@ -81,6 +81,7 @@ public class ReplicationClient implements Runnable{
 
     // Create files to store on this node
     public void addFiles() throws IOException {
+        System.out.println(4);
         String name = InetAddress.getLocalHost().getHostName();
         // Create 3 file names to add
         ArrayList<String> fileNames = new ArrayList<>();
@@ -88,10 +89,13 @@ public class ReplicationClient implements Runnable{
         fileNames.add(name + "_2");
         fileNames.add(name + "_3");
 
+        System.out.println(5);
+
         // Create the files
         String str = "Text";
         BufferedWriter writer;
         for (String fileName : fileNames) {
+            System.out.println(local_file_path + "\\" + fileName);
             writer = new BufferedWriter(new FileWriter(local_file_path + "\\" + fileName));
             writer.write(str);
             writer.close();
