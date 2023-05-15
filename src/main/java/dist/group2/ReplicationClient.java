@@ -31,17 +31,14 @@ public class ReplicationClient implements Runnable{
     private final Path log_path = Path.of(new File("").getAbsolutePath().concat("\\src\\log_files"));  //Stores the local files that need to be replicated
 
     public ReplicationClient(int fileUnicastPort) throws IOException {
-        System.out.println(1);
-        addFiles();
-        System.out.println(4);
         this.fileUnicastPort = fileUnicastPort;
-        System.out.println(5);
+    }
+
+    public void setFileDirectoryWatchDog() throws IOException {
         this.local_file_path.register(file_daemon,
                 StandardWatchEventKinds.ENTRY_CREATE,
                 StandardWatchEventKinds.ENTRY_MODIFY,
                 StandardWatchEventKinds.ENTRY_DELETE);
-        System.out.println(6);
-        replicateFiles();
     }
 
     /**

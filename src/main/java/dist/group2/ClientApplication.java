@@ -28,18 +28,20 @@ public class ClientApplication {
 
         Communicator.init(multicastGroup, multicastPort, fileUnicastPort, multicastIP, unicastPortDiscovery);
         this.discoveryClient.init(name, IPAddress, namingPort, unicastPortDiscovery);
-//        ReplicationClient replicationClient = new ReplicationClient(fileUnicastPort);
+        ReplicationClient replicationClient = new ReplicationClient(fileUnicastPort);
 
 
         System.out.println("<---> " + name + " Instantiated with IP " + IPAddress + " <--->");
-//        replicationClient.addFiles();
         discoveryClient.bootstrap();
         NamingClient.setBaseUrl(discoveryClient.getBaseUrl());
         NamingClient.setName(name);
-//        replicationClient.replicateFiles();
 
-//        Thread replicationthread = new Thread(replicationClient);
-//        replicationthread.start();
+        replicationClient.addFiles();
+        replicationClient.setFileDirectoryWatchDog();
+        replicationClient.replicateFiles();
+
+        Thread replicationthread = new Thread(replicationClient);
+        replicationthread.start();
     }
 
     public static void main(String[] args) {
