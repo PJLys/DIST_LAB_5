@@ -46,7 +46,6 @@ public class DiscoveryClient {
     }
 
     public void bootstrap() {
-        failure();
         System.out.println("<---> " + name + " Bootstrap <--->");
         // Send multicast to other nodes and naming server
         String data = name + "|" + IPAddress;
