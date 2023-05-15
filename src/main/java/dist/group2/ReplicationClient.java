@@ -32,6 +32,24 @@ public class ReplicationClient implements Runnable{
 
     public ReplicationClient(int fileUnicastPort) throws IOException {
         this.fileUnicastPort = fileUnicastPort;
+        createDirectory(local_file_path);
+        createDirectory(replicated_file_path);
+        createDirectory(log_path);
+    }
+
+    public void createDirectory(Path path) {
+        File directory = new File(path.toString());
+
+        if (!directory.exists()) {
+            boolean success = directory.mkdir();
+            if (success) {
+                System.out.println("Directory created successfully!");
+            } else {
+                System.out.println("Failed to create directory!");
+            }
+        } else {
+            System.out.println("Directory already exists!");
+        }
     }
 
     public void setFileDirectoryWatchDog() throws IOException {
