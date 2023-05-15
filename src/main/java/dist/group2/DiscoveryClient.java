@@ -14,14 +14,14 @@ import java.util.Arrays;
 
 @Service
 public class DiscoveryClient {
-    private int previousID;
+    private static int previousID;
     private int nextID;
-    private String name;
+    private static String name;
     private String IPAddress;
     private int namingPort;
     private int unicastPort;
     private String baseUrl;
-    private boolean shuttingDown = false;
+    private static boolean shuttingDown = false;
 
     public void init(String name, String IPAddress, int unicastPort, int namingPort) {
         this.name = name;
@@ -31,6 +31,10 @@ public class DiscoveryClient {
         this.unicastPort = unicastPort;
         this.previousID = hashValue(name);    // Set previousID to its own ID
         this.nextID = hashValue(name);        // Set nextID to its own ID
+    }
+
+    public static int getPreviousID() {
+        return previousID;
     }
 
     public static Integer hashValue(String name) {
@@ -123,9 +127,9 @@ public class DiscoveryClient {
         NamingClient.deleteNode(name);
     }
 
-    public void failure() {
+    public static void failure() {
         if (!shuttingDown) {
-            System.out.println("<---> " + this.name + " Failure <--->");
+            System.out.println("<---> " + DiscoveryClient.name + " Failure <--->");
             SpringApplication.exit(ClientApplication.context);
         }
     }
