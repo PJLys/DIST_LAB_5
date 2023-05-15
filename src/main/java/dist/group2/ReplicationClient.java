@@ -24,21 +24,23 @@ public class ReplicationClient implements Runnable{
     private String nodeName = InetAddress.getLocalHost().getHostName();
     private int nodeID = DiscoveryClient.hashValue(nodeName);
     private String IPAddress = InetAddress.getLocalHost().getHostAddress();UnicastReceivingChannelAdapter fileAdapter;
+
     WatchService file_daemon = FileSystems.getDefault().newWatchService();
     private final Path local_file_path = Path.of(new File("").getAbsolutePath().concat("\\src\\local_files"));  //Stores the local files that need to be replicated
     private final Path replicated_file_path = Path.of(new File("").getAbsolutePath().concat("\\src\\replicated_files"));  //Stores the local files that need to be replicated
     private final Path log_path = Path.of(new File("").getAbsolutePath().concat("\\src\\log_files"));  //Stores the local files that need to be replicated
 
     public ReplicationClient(int fileUnicastPort) throws IOException {
-        addFiles();
         System.out.println(1);
+        addFiles();
+        System.out.println(4);
         this.fileUnicastPort = fileUnicastPort;
-        System.out.println(2);
+        System.out.println(5);
         this.local_file_path.register(file_daemon,
                 StandardWatchEventKinds.ENTRY_CREATE,
                 StandardWatchEventKinds.ENTRY_MODIFY,
                 StandardWatchEventKinds.ENTRY_DELETE);
-        System.out.println(3);
+        System.out.println(6);
         replicateFiles();
     }
 
@@ -81,7 +83,7 @@ public class ReplicationClient implements Runnable{
 
     // Create files to store on this node
     public void addFiles() throws IOException {
-        System.out.println(4);
+        System.out.println(2);
         String name = InetAddress.getLocalHost().getHostName();
         // Create 3 file names to add
         ArrayList<String> fileNames = new ArrayList<>();
@@ -89,7 +91,7 @@ public class ReplicationClient implements Runnable{
         fileNames.add(name + "_2");
         fileNames.add(name + "_3");
 
-        System.out.println(5);
+        System.out.println(3);
 
         // Create the files
         String str = "Text";

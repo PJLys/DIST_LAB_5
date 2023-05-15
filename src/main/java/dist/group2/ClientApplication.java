@@ -34,6 +34,7 @@ public class ClientApplication {
         System.out.println("<---> " + name + " Instantiated with IP " + IPAddress + " <--->");
 //        replicationClient.addFiles();
         discoveryClient.bootstrap();
+        System.out.println("bootstrap");
         NamingClient.setBaseUrl(discoveryClient.getBaseUrl());
         NamingClient.setName(name);
 //        replicationClient.replicateFiles();
