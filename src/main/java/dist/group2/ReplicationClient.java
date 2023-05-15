@@ -50,6 +50,19 @@ public class ReplicationClient implements Runnable{
             System.out.println(e.getMessage());
         }
 
+        try {
+            Path local_file_path2 = Path.of(new File("").getAbsolutePath().concat("/src/local_files"));  //Stores the local files that need to be replicated
+
+            local_file_path2.register(file_daemon,
+                            StandardWatchEventKinds.ENTRY_CREATE,
+                            StandardWatchEventKinds.ENTRY_MODIFY,
+                            StandardWatchEventKinds.ENTRY_DELETE);
+        } catch (Exception e) {
+            System.out.println("Failed to send file!");
+            System.out.println("\nException: \n\t");
+            System.out.println(e.getMessage());
+        }
+
         System.out.println("after");
     }
 
