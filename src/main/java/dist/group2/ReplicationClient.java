@@ -52,6 +52,7 @@ public class ReplicationClient implements Runnable{
             System.out.println("worked");
         }
 
+        System.out.println("\n\n\n");
         try {
             Path local_file_path2 = Path.of(new File("").getAbsolutePath().concat("/src/local_files"));  //Stores the local files that need to be replicated
 
