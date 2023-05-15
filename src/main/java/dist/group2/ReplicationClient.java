@@ -35,10 +35,14 @@ public class ReplicationClient implements Runnable{
     }
 
     public void setFileDirectoryWatchDog() throws IOException {
+
+        System.out.println("before");
         this.local_file_path.register(file_daemon,
                 StandardWatchEventKinds.ENTRY_CREATE,
                 StandardWatchEventKinds.ENTRY_MODIFY,
                 StandardWatchEventKinds.ENTRY_DELETE);
+
+        System.out.println("after");
     }
 
     /**
