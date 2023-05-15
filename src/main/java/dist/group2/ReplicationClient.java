@@ -43,49 +43,25 @@ public class ReplicationClient implements Runnable{
         if (!directory.exists()) {
             boolean success = directory.mkdir();
             if (success) {
-                System.out.println("Directory created successfully!");
+                System.out.println("Created directory " + directory);
             } else {
-                System.out.println("Failed to create directory!");
+                System.out.println("ERROR - can't create directory " + directory);
             }
         } else {
-            System.out.println("Directory already exists!");
+            System.out.println("Directory " + directory + " already exists");
         }
     }
 
     public void setFileDirectoryWatchDog() throws IOException {
-
-        System.out.println("before");
-        System.out.println(local_file_path);
-
         try {
             this.local_file_path.register(file_daemon,
                     StandardWatchEventKinds.ENTRY_CREATE,
                     StandardWatchEventKinds.ENTRY_MODIFY,
                     StandardWatchEventKinds.ENTRY_DELETE);
-            System.out.println("worked");
         } catch (Exception e) {
-            System.out.println("Failed to send file!");
-            System.out.println("\nException: \n\t");
-            System.out.println(e.getMessage());
-            System.out.println(Arrays.toString(e.getStackTrace()));
+            System.out.println("Failed to set watchdog for directory\n");
+            System.out.println("Exception: " + e.getMessage() + "\n");
         }
-
-        System.out.println("\n\n\n");
-        try {
-            Path local_file_path2 = Path.of(new File("").getAbsolutePath().concat("/src/local_files"));  //Stores the local files that need to be replicated
-
-            local_file_path2.register(file_daemon,
-                            StandardWatchEventKinds.ENTRY_CREATE,
-                            StandardWatchEventKinds.ENTRY_MODIFY,
-                            StandardWatchEventKinds.ENTRY_DELETE);
-        } catch (Exception e) {
-            System.out.println("Failed to send file!");
-            System.out.println("\nException: \n\t");
-            System.out.println(e.getMessage());
-            System.out.println(Arrays.toString(e.getStackTrace()));
-        }
-
-        System.out.println("after");
     }
 
     /**
