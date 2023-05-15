@@ -114,9 +114,10 @@ public class ReplicationClient implements Runnable{
         String str = "Text";
         BufferedWriter writer;
         for (String fileName : fileNames) {
-            System.out.println(local_file_path + "/" + fileName);
+            System.out.println("Added file: " + local_file_path + "/" + fileName);
             writer = new BufferedWriter(new FileWriter(local_file_path + "/" + fileName));
             writer.write(str);
+            writer.flush();
             writer.close();
         }
     }
@@ -127,7 +128,7 @@ public class ReplicationClient implements Runnable{
         File[] files = new File(local_file_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
         assert files != null;
         for (File file : files) {
-            System.out.println(file.toString());
+            System.out.println("Replicating file: " + file.toString());
             if (file.isFile()) {
                 String fileName = file.getName();
                 String filePath = local_file_path.toString() + '/' + fileName;
