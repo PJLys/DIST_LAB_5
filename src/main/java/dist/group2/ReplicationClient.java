@@ -44,10 +44,12 @@ public class ReplicationClient implements Runnable{
                     StandardWatchEventKinds.ENTRY_CREATE,
                     StandardWatchEventKinds.ENTRY_MODIFY,
                     StandardWatchEventKinds.ENTRY_DELETE);
+            System.out.println("worked");
         } catch (Exception e) {
             System.out.println("Failed to send file!");
             System.out.println("\nException: \n\t");
             System.out.println(e.getMessage());
+            System.out.println("worked");
         }
 
         try {
