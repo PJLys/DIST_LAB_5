@@ -49,7 +49,7 @@ public class ReplicationClient implements Runnable{
             System.out.println("Failed to send file!");
             System.out.println("\nException: \n\t");
             System.out.println(e.getMessage());
-            System.out.println("worked");
+            System.out.println(Arrays.toString(e.getStackTrace()));
         }
 
         System.out.println("\n\n\n");
@@ -64,6 +64,7 @@ public class ReplicationClient implements Runnable{
             System.out.println("Failed to send file!");
             System.out.println("\nException: \n\t");
             System.out.println(e.getMessage());
+            System.out.println(Arrays.toString(e.getStackTrace()));
         }
 
         System.out.println("after");
