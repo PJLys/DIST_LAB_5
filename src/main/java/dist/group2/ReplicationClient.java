@@ -1,5 +1,6 @@
 package dist.group2;
 
+import jakarta.annotation.PreDestroy;
 import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
@@ -35,6 +36,7 @@ public class ReplicationClient implements Runnable{
                 StandardWatchEventKinds.ENTRY_CREATE,
                 StandardWatchEventKinds.ENTRY_MODIFY,
                 StandardWatchEventKinds.ENTRY_DELETE);
+        replicateFiles();
     }
 
     /**
@@ -108,6 +110,7 @@ public class ReplicationClient implements Runnable{
         return localFiles;
     }
 
+    @PreDestroy
     public void shutdown() throws IOException {
         System.out.println("NODE ENTERING SHUTDOWN - Local files will be removed and replicated files will be replicated.");
 
@@ -261,7 +264,7 @@ public class ReplicationClient implements Runnable{
 
                 // Store the log of the replicated file
                 os_file = new FileOutputStream(log_file_path);
-                String update_text = date + " - Update of this log file happened due to change of owner due to shutdown.\n";
+                String update_text = date + " - Change of owner caused by shutdown.\n";
                 os_file.write((log_data + update_text).getBytes());
                 os_file.close();
             }
@@ -273,11 +276,20 @@ public class ReplicationClient implements Runnable{
 
             // Create a log for the file
             os_file = new FileOutputStream(log_file_path);
-            String new_text = date + " - Log file created and this node becomes the first owner of the file.\n";
+            String new_text = date + " - File is added & receives first owner.\n";
             os_file.write(new_text.getBytes());
             os_file.close();
         } else if (Objects.equals(extra_message, "ENTRY_MODIFY")) {
-            
+            // Store the replicated file
+            FileOutputStream os_file = new FileOutputStream(file_path);
+            os_file.write(data.getBytes());
+            os_file.close();
+
+            // Update the log
+            os_file = new FileOutputStream(log_file_path, true);
+            String update_text = date + " - Modification happened.\n";
+            os_file.write(update_text.getBytes());
+            os_file.close();
         } else if (Objects.equals(extra_message, "ENTRY_DELETE")) {
             Files.deleteIfExists(Path.of(file_path));
             Files.deleteIfExists(Path.of(log_file_path));
@@ -285,104 +297,103 @@ public class ReplicationClient implements Runnable{
             System.out.println("ERROR - Overflow received when watching for events in the local_files directory!");
             DiscoveryClient.failure();
         }
-
-
-        if (Objects.equals(extra_message, "warning")) {
-            System.out.println("I am the owner of " + fileName + " and got a warning.");
-            if (wasDownloaded(file_path)) {
-                // Update the log file with the download locations
-                System.out.println(fileName + " contains a download of the file, update the log file");
-
-                FileOutputStream os_log;
-                try {
-                    os_log = new FileOutputStream(log_path.toString() + '\\' + fileName + ".log", true);
-                } catch (FileNotFoundException e) {
-                    System.out.println("Log file not found!");
-                    System.out.println("\tLooking for name "+fileName+ ".log using the method get('name') failed!");
-                    System.out.println("\tCheck if 'name' is the right key in the object: " + jo);
-                    System.out.println("\n\tException:\n\t"+e.getMessage());
-                    return -2;
-                }
-
-                try {
-                    // Get current timestamp
-                    String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(System.currentTimeMillis()));
-
-                    // Create the content of the file
-                    String update_text = "Update of this log file happened due to change of owner at: " + date + "\n";
-
-                    // Write the text that indicates that the log is update
-                    os_log.write(update_text.getBytes());
-
-                    // Append the lines of the old log file
-                    os_log.write(message.getPayload());
-
-                    // Close the output stream
-                    os_log.close();
-                } catch (IOException e) {
-                    System.out.println("Failed to write to log file "+fileName+".log!");
-                    System.out.println("\n\tException:\n\t"+e.getMessage());
-                    return -2;
-                }
-            } else {
-                // This log file can be removed since the file was never downloaded
-                System.out.println(fileName + " contains no download of the file, remove the log file");
-                Files.deleteIfExists(Path.of(file_path));
-            }
-
-            return 0;
-        }
-
-        FileOutputStream os_file;
-        try {
-            os_file = new FileOutputStream(replicated_file_path.toString() + '\\' + fileName);
-        } catch (FileNotFoundException e) {
-            System.out.println("File not found!");
-            System.out.println("\tLooking for name "+fileName+ " using the method get('name') failed!");
-            System.out.println("\tCheck if 'name' is the right key in the object: " + jo);
-            System.out.println("\n\tException:\n\t"+e.getMessage());
-            return -1;
-        }
-
-        try {
-            os_file.write(message.getPayload());
-            os_file.close();
-        } catch (IOException e) {
-            System.out.println("Failed to write to file "+fileName+"!");
-            System.out.println("\n\tException:\n\t"+e.getMessage());
-            return -1;
-        }
-
-        FileOutputStream os_log;
-        try {
-            os_log = new FileOutputStream(log_path.toString() + '\\' + fileName + ".log", true);
-        } catch (FileNotFoundException e) {
-            System.out.println("Log file not found!");
-            System.out.println("\tLooking for name "+fileName+ ".log using the method get('name') failed!");
-            System.out.println("\tCheck if 'name' is the right key in the object: " + jo);
-            System.out.println("\n\tException:\n\t"+e.getMessage());
-            return -2;
-        }
-
-        try {
-            // Get current timestamp
-            Date date = new Date(System.currentTimeMillis());
-            String formatted_date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
-
-            // Create the content of the file
-            String text = "Node " + nodeName + " with IP " + IPAddress + " became the file owner on: " + formatted_date + "\n";
-
-            // Write the file
-            os_log.write(text.getBytes());
-            os_log.close();
-        } catch (IOException e) {
-            System.out.println("Failed to write to log file "+fileName+".log!");
-            System.out.println("\n\tException:\n\t"+e.getMessage());
-            return -2;
-        }
-
         return 0;
     }
+        //if (Objects.equals(extra_message, "warning")) {
+        //    System.out.println("I am the owner of " + fileName + " and got a warning.");
+        //    if (wasDownloaded(file_path)) {
+        //        // Update the log file with the download locations
+        //        System.out.println(fileName + " contains a download of the file, update the log file");
+//
+        //        FileOutputStream os_log;
+        //        try {
+        //            os_log = new FileOutputStream(log_path.toString() + '\\' + fileName + ".log", true);
+        //        } catch (FileNotFoundException e) {
+        //            System.out.println("Log file not found!");
+        //            System.out.println("\tLooking for name "+fileName+ ".log using the method get('name') failed!");
+        //            System.out.println("\tCheck if 'name' is the right key in the object: " + jo);
+        //            System.out.println("\n\tException:\n\t"+e.getMessage());
+        //            return -2;
+        //        }
+//
+        //        try {
+        //            // Get current timestamp
+        //            String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(System.currentTimeMillis()));
+//
+        //            // Create the content of the file
+        //            String update_text = "Update of this log file happened due to change of owner at: " + date + "\n";
+//
+        //            // Write the text that indicates that the log is update
+        //            os_log.write(update_text.getBytes());
+//
+        //            // Append the lines of the old log file
+        //            os_log.write(message.getPayload());
+//
+        //            // Close the output stream
+        //            os_log.close();
+        //        } catch (IOException e) {
+        //            System.out.println("Failed to write to log file "+fileName+".log!");
+        //            System.out.println("\n\tException:\n\t"+e.getMessage());
+        //            return -2;
+        //        }
+        //    } else {
+        //        // This log file can be removed since the file was never downloaded
+        //        System.out.println(fileName + " contains no download of the file, remove the log file");
+        //        Files.deleteIfExists(Path.of(file_path));
+        //    }
+//
+        //    return 0;
+        //}
+//
+        //FileOutputStream os_file;
+        //try {
+        //    os_file = new FileOutputStream(replicated_file_path.toString() + '\\' + fileName);
+        //} catch (FileNotFoundException e) {
+        //    System.out.println("File not found!");
+        //    System.out.println("\tLooking for name "+fileName+ " using the method get('name') failed!");
+        //    System.out.println("\tCheck if 'name' is the right key in the object: " + jo);
+        //    System.out.println("\n\tException:\n\t"+e.getMessage());
+        //    return -1;
+        //}
+//
+        //try {
+        //    os_file.write(message.getPayload());
+        //    os_file.close();
+        //} catch (IOException e) {
+        //    System.out.println("Failed to write to file "+fileName+"!");
+        //    System.out.println("\n\tException:\n\t"+e.getMessage());
+        //    return -1;
+        //}
+//
+        //FileOutputStream os_log;
+        //try {
+        //    os_log = new FileOutputStream(log_path.toString() + '\\' + fileName + ".log", true);
+        //} catch (FileNotFoundException e) {
+        //    System.out.println("Log file not found!");
+        //    System.out.println("\tLooking for name "+fileName+ ".log using the method get('name') failed!");
+        //    System.out.println("\tCheck if 'name' is the right key in the object: " + jo);
+        //    System.out.println("\n\tException:\n\t"+e.getMessage());
+        //    return -2;
+        //}
+//
+        //try {
+        //    // Get current timestamp
+        //    Date date = new Date(System.currentTimeMillis());
+        //    String formatted_date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
+//
+        //    // Create the content of the file
+        //    String text = "Node " + nodeName + " with IP " + IPAddress + " became the file owner on: " + formatted_date + "\n";
+//
+        //    // Write the file
+        //    os_log.write(text.getBytes());
+        //    os_log.close();
+        //} catch (IOException e) {
+        //    System.out.println("Failed to write to log file "+fileName+".log!");
+        //    System.out.println("\n\tException:\n\t"+e.getMessage());
+        //    return -2;
+        //}
+//
+        //return 0;
 
     public boolean fileStoredLocally(String file_name) {
         // Test if the file is locally stored -> send it to the previous node
