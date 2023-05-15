@@ -26,9 +26,9 @@ public class ReplicationClient implements Runnable{
     private String IPAddress = InetAddress.getLocalHost().getHostAddress();UnicastReceivingChannelAdapter fileAdapter;
 
     WatchService file_daemon = FileSystems.getDefault().newWatchService();
-    private final Path local_file_path = Path.of(new File("").getAbsolutePath().concat("\\src\\local_files"));  //Stores the local files that need to be replicated
-    private final Path replicated_file_path = Path.of(new File("").getAbsolutePath().concat("\\src\\replicated_files"));  //Stores the local files that need to be replicated
-    private final Path log_path = Path.of(new File("").getAbsolutePath().concat("\\src\\log_files"));  //Stores the local files that need to be replicated
+    private final Path local_file_path = Path.of(new File("").getAbsolutePath().concat("/src/local_files"));  //Stores the local files that need to be replicated
+    private final Path replicated_file_path = Path.of(new File("").getAbsolutePath().concat("/src/replicated_files"));  //Stores the local files that need to be replicated
+    private final Path log_path = Path.of(new File("").getAbsolutePath().concat("/src/log_files"));  //Stores the local files that need to be replicated
 
     public ReplicationClient(int fileUnicastPort) throws IOException {
         this.fileUnicastPort = fileUnicastPort;
@@ -75,7 +75,7 @@ public class ReplicationClient implements Runnable{
         System.out.println("File created: "+ filepath);
         System.out.println("Sending replication request");
         try {
-            String filePath = local_file_path.toString() + '\\' + filename;
+            String filePath = local_file_path.toString() + '/' + filename;
             String replicator_loc = NamingClient.findFile(Path.of(filePath).getFileName().toString());
             sendFileToNode(filePath, null, replicator_loc, event.kind().toString());
         } catch (IOException e) {
@@ -114,8 +114,8 @@ public class ReplicationClient implements Runnable{
         String str = "Text";
         BufferedWriter writer;
         for (String fileName : fileNames) {
-            System.out.println(local_file_path + "\\" + fileName);
-            writer = new BufferedWriter(new FileWriter(local_file_path + "\\" + fileName));
+            System.out.println(local_file_path + "/" + fileName);
+            writer = new BufferedWriter(new FileWriter(local_file_path + "/" + fileName));
             writer.write(str);
             writer.close();
         }
@@ -130,7 +130,7 @@ public class ReplicationClient implements Runnable{
             System.out.println(file.toString());
             if (file.isFile()) {
                 String fileName = file.getName();
-                String filePath = local_file_path.toString() + '\\' + fileName;
+                String filePath = local_file_path.toString() + '/' + fileName;
                 String replicator_loc = NamingClient.findFile(Path.of(filePath).getFileName().toString());
                 sendFileToNode( filePath, null, replicator_loc, "ENTRY_CREATE");
             }
@@ -166,7 +166,7 @@ public class ReplicationClient implements Runnable{
         for (File file : localFiles) {
             // Get info of the file
             String fileName = file.getName();
-            String filePath = local_file_path.toString() +  + '\\' + fileName;
+            String filePath = local_file_path.toString() +  + '/' + fileName;
 
             // The destination is the owner of the file instead of the previous node
             String destinationIP = NamingClient.findFile(fileName);
@@ -184,8 +184,8 @@ public class ReplicationClient implements Runnable{
 
             // Get info of the file
             String fileName = file.getName();
-            String filePath = replicated_file_path.toString() +  + '\\' + fileName;
-            String logPath = log_path.toString() +  + '\\' + fileName + ".log";
+            String filePath = replicated_file_path.toString() +  + '/' + fileName;
+            String logPath = log_path.toString() +  + '/' + fileName + ".log";
 
             // Transfer the file and its log to the previous node
             sendFileToNode(filePath, logPath, previousNodeIP, "ENTRY_SHUTDOWN_REPLICATE");
@@ -266,8 +266,8 @@ public class ReplicationClient implements Runnable{
         String data = (String) jo.get("data");
         String log_data = (String) jo.get("log_data");
 
-        String file_path = replicated_file_path.toString() + '\\' + file_name;
-        String log_file_path = log_path.toString() + '\\' + file_name + ".log";
+        String file_path = replicated_file_path.toString() + '/' + file_name;
+        String log_file_path = log_path.toString() + '/' + file_name + ".log";
 
         // Get current timestamp
         String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(System.currentTimeMillis()));
@@ -335,7 +335,7 @@ public class ReplicationClient implements Runnable{
 //
         //        FileOutputStream os_log;
         //        try {
-        //            os_log = new FileOutputStream(log_path.toString() + '\\' + fileName + ".log", true);
+        //            os_log = new FileOutputStream(log_path.toString() + '/' + fileName + ".log", true);
         //        } catch (FileNotFoundException e) {
         //            System.out.println("Log file not found!");
         //            System.out.println("\tLooking for name "+fileName+ ".log using the method get('name') failed!");
@@ -375,7 +375,7 @@ public class ReplicationClient implements Runnable{
 //
         //FileOutputStream os_file;
         //try {
-        //    os_file = new FileOutputStream(replicated_file_path.toString() + '\\' + fileName);
+        //    os_file = new FileOutputStream(replicated_file_path.toString() + '/' + fileName);
         //} catch (FileNotFoundException e) {
         //    System.out.println("File not found!");
         //    System.out.println("\tLooking for name "+fileName+ " using the method get('name') failed!");
@@ -395,7 +395,7 @@ public class ReplicationClient implements Runnable{
 //
         //FileOutputStream os_log;
         //try {
-        //    os_log = new FileOutputStream(log_path.toString() + '\\' + fileName + ".log", true);
+        //    os_log = new FileOutputStream(log_path.toString() + '/' + fileName + ".log", true);
         //} catch (FileNotFoundException e) {
         //    System.out.println("Log file not found!");
         //    System.out.println("\tLooking for name "+fileName+ ".log using the method get('name') failed!");
