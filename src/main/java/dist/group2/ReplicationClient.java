@@ -31,11 +31,14 @@ public class ReplicationClient implements Runnable{
 
     public ReplicationClient(int fileUnicastPort) throws IOException {
         addFiles();
+        System.out.println(1);
         this.fileUnicastPort = fileUnicastPort;
+        System.out.println(2);
         this.local_file_path.register(file_daemon,
                 StandardWatchEventKinds.ENTRY_CREATE,
                 StandardWatchEventKinds.ENTRY_MODIFY,
                 StandardWatchEventKinds.ENTRY_DELETE);
+        System.out.println(3);
         replicateFiles();
     }
 
