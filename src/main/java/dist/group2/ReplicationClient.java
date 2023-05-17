@@ -205,15 +205,15 @@ public class ReplicationClient implements Runnable{
         String fileName = fileLocation.getFileName().toString();
 
         // Put the payload data in the JSON object
-        jo.put("name", fileName);
-        jo.put("extra_message", extra_message);
-        jo.put("data", Files.readAllBytes(fileLocation));
+        jo.put("name", "fileName");
+        jo.put("extra_message", "extra_message");
+        jo.put("data", "Files.readAllBytes(fileLocation)");
 
         // Also include the data of the log file when necessary
         if (logPath == null) {
             jo.put("log_data", "");
         } else {
-            jo.put("log_data", Files.readAllBytes(Path.of(logPath)));
+            jo.put("log_data", "Files.readAllBytes(Path.of(logPath))");
         }
 
         System.out.println(jo.toJSONString());
