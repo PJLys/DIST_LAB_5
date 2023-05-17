@@ -1,6 +1,7 @@
 package dist.group2;
 
 import jakarta.annotation.PreDestroy;
+import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
@@ -8,6 +9,7 @@ import org.hibernate.cfg.NotYetImplementedException;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.ip.udp.UnicastReceivingChannelAdapter;
 import org.springframework.messaging.Message;
+import org.springframework.util.SerializationUtils;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -213,16 +215,10 @@ public class ReplicationClient implements Runnable{
         } else {
             jo.put("log_data", Files.readAllBytes(Path.of(logPath)));
         }
+        
+        byte[] data = SerializationUtils.serialize(jo);
 
-        byte[] data = null;
-        try {
-            // Write the JSON data into a buffer
-            data = jo.toString().getBytes(StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            System.out.println("Received message but failed to parse data!");
-            System.out.println("\n\tException: \n\t"+e.getMessage());
-            System.out.println("\n\tException: \n\t"+e.getStackTrace());
-        }
+        // byte[] data = jsonArray.toString().getBytes(StandardCharsets.UTF_8);
 
         // Create TCP socket and output stream
         Socket tcp_socket = new Socket(InetAddress.getByName(nodeIP), fileUnicastPort);
