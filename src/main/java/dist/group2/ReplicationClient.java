@@ -128,10 +128,15 @@ public class ReplicationClient implements Runnable{
         File[] files = new File(local_file_path.toString()).listFiles();//If this pathname does not denote a directory, then listFiles() returns null.
         // Enkel file2 wordt afgegaan in de loop
         // Maak boven geen new File, creer file in for loop
+        Path local_file_path = Path.of(new File("").getAbsolutePath().concat("/src/local_files/"));  //Stores the local files that need to be replicated
+        File folder = new File(local_file_path.toString());
+        File[] files2 = folder.listFiles();
+        for (File file : files2) {
+            System.out.println("Replicating file: " + file.toString());
         System.out.println(files);
         System.out.println(new File(local_file_path.toString()).listFiles());
         assert files != null;
-        for (File file : files) {
+        for (File file2 : files) {
             System.out.println("Replicating file: " + file.toString());
             if (file.isFile()) {
                 String fileName = file.getName();
