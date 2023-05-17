@@ -211,7 +211,7 @@ public class ReplicationClient implements Runnable{
 
         // Also include the data of the log file when necessary
         if (logPath == null) {
-            jo.put("log_data", null);
+            jo.put("log_data", "");
         } else {
             jo.put("log_data", Files.readAllBytes(Path.of(logPath)));
         }
