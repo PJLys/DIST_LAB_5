@@ -216,7 +216,8 @@ public class ReplicationClient implements Runnable{
             jo.put("log_data", Files.readAllBytes(Path.of(logPath)));
         }
 
-        byte[] data = jo.toJSONString().getBytes();
+        System.out.println(jo.toJSONString());
+        byte[] data = jo.toString().getBytes(StandardCharsets.UTF_8);
 
         // Create TCP socket and output stream
         Socket tcp_socket = new Socket(InetAddress.getByName(nodeIP), fileUnicastPort); //HIER IS DE FOUT, CONNECTION REFUSED!
