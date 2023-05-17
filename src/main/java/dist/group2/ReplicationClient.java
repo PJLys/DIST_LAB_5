@@ -219,7 +219,6 @@ public class ReplicationClient implements Runnable{
             // Write the JSON data into a buffer
             data = jo.toString().getBytes(StandardCharsets.UTF_8);
         } catch (Exception e) {
-            System.out.println(jo);
             System.out.println("Received message but failed to parse data!");
             System.out.println("\n\tException: \n\t"+e.getMessage());
             System.out.println("\n\tException: \n\t"+e.getStackTrace());
