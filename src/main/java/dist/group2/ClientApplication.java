@@ -27,7 +27,7 @@ public class ClientApplication {
         int fileUnicastPort = 4451;
 
         Communicator.init(multicastGroup, multicastPort, fileUnicastPort, multicastIP, unicastPortDiscovery);
-        this.discoveryClient.init(name, IPAddress, namingPort, unicastPortDiscovery);
+        this.discoveryClient.init(name, IPAddress, unicastPortDiscovery, namingPort);
         ReplicationClient replicationClient = new ReplicationClient(fileUnicastPort);
 
 
