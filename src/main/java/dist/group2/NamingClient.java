@@ -47,7 +47,6 @@ public class NamingClient {
             return IPAddress;
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            System.out.println(e.getStackTrace());
             throw new RuntimeException("There are no nodes in the database");
         }
     }
