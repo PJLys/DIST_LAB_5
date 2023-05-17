@@ -133,10 +133,10 @@ public class ReplicationClient implements Runnable{
         File[] files2 = folder.listFiles();
         for (File file : files2) {
             System.out.println("Replicating file: " + file.toString());
+        }
         System.out.println(files);
         System.out.println(new File(local_file_path.toString()).listFiles());
-        assert files != null;
-        for (File file2 : files) {
+        for (File file : files) {
             System.out.println("Replicating file: " + file.toString());
             if (file.isFile()) {
                 String fileName = file.getName();
