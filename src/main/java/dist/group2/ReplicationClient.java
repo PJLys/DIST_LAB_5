@@ -136,6 +136,7 @@ public class ReplicationClient implements Runnable{
                 String fileName = file.getName();
                 String filePath = local_file_path.toString() + '/' + fileName;
                 String replicator_loc = NamingClient.findFile(Path.of(filePath).getFileName().toString());
+                System.out.println(replicator_loc);
                 sendFileToNode( filePath, null, replicator_loc, "ENTRY_CREATE");
             }
         }
@@ -211,22 +212,15 @@ public class ReplicationClient implements Runnable{
 
         // Also include the data of the log file when necessary
         if (logPath == null) {
-            jo.put("log_data", "none");
+            jo.put("log_data", "null");
         } else {
             jo.put("log_data", Arrays.toString(Files.readAllBytes(Path.of(logPath))));
         }
 
-        System.out.println(jo.toJSONString());
         byte[] data = jo.toString().getBytes(StandardCharsets.UTF_8);
 
         // Create TCP socket and output stream
-        Socket tcp_socket = null;
-        try {
-            tcp_socket = new Socket(InetAddress.getByName(nodeIP), fileUnicastPort);
-        } catch (Exception e) {
-            System.out.println("\n\tException: \n\t"+e.getMessage());
-            System.out.println("\n\tException: \n\t"+e.getStackTrace());
-        }
+        Socket tcp_socket = new Socket(InetAddress.getByName(nodeIP), fileUnicastPort);
         OutputStream os = tcp_socket.getOutputStream();
 
         // Send data
