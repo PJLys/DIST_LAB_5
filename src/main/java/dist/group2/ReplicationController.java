@@ -29,6 +29,8 @@ public class ReplicationController {
 
     @PostMapping
     public void replicateFile(@RequestBody JSONObject fileMessage) throws IOException {
+        System.out.println(fileMessage);
         client.replicateFile(fileMessage);
+        System.out.println("replicated");
     }
 }

@@ -258,8 +258,9 @@ public class ReplicationClient implements Runnable{
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 
+        System.out.println(requestEntity);
         try {
-            restTemplate.postForObject(url, requestBody, Void.class);
+            restTemplate.postForObject(url, requestEntity, Void.class);
         } catch (Exception e) {
             System.out.println("ERROR - posting file throws IOException");
             System.out.println("\tRaw data received: " + e.getStackTrace());
