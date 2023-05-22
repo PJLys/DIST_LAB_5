@@ -247,10 +247,10 @@ public class ReplicationClient implements Runnable{
         String url = "http://" + nodeIP + ":" + fileUnicastPort + "/api/node";
         RestTemplate restTemplate = new RestTemplate();
 
-        //Map<String, Object> requestBody = new HashMap<>();
-        //requestBody.put("fileMessage", data);
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("file", json);
         try {
-            restTemplate.postForObject(url, data, Void.class);
+            restTemplate.postForObject(url, requestBody, Void.class);
         } catch (Exception e) {
             System.out.println("ERROR - posting file throws IOException");
             System.out.println("\tRaw data received: " + e.getStackTrace());
@@ -479,19 +479,19 @@ public class ReplicationClient implements Runnable{
     // POST file using REST
     @PostMapping
     @RequestMapping(path="api/node")
-    public void replicateFile(@RequestBody Message<byte[]> fileMessage) throws IOException {
+    public void replicateFile(@RequestBody Message<JSONObject> fileMessage) throws IOException {
         System.out.println("Received file using REST");
-        byte[] raw_data = fileMessage.getPayload();
+        JSONObject raw_data = fileMessage.getPayload();
         JSONObject jo = null;
-        try {
-            JSONParser parser = new JSONParser();
-            jo = (JSONObject) parser.parse(raw_data);
-        } catch (ParseException e) {
-            System.out.println("Received message but failed to parse data!");
-            System.out.println("\tRaw data received: " + Arrays.toString(raw_data));
-            System.out.println("\n\tException: \n\t"+e.getMessage());
-            DiscoveryClient.failure();
-        }
+        //try {
+        //    JSONParser parser = new JSONParser();
+        //    jo = (JSONObject) parser.parse(raw_data);
+        //} catch (ParseException e) {
+        //    System.out.println("Received message but failed to parse data!");
+        //    System.out.println("\tRaw data received: " + Arrays.toString(raw_data));
+        //    System.out.println("\n\tException: \n\t"+e.getMessage());
+        //    DiscoveryClient.failure();
+        //}
 
         String file_name = (String) jo.get("name");
         String extra_message = (String) jo.get("extra_message");
