@@ -255,8 +255,9 @@ public class ReplicationClient implements Runnable{
         // Specify media type
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
-        
+
         try {
             restTemplate.postForObject(url, requestEntity, Void.class);
         } catch (Exception e) {
