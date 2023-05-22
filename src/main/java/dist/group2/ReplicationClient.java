@@ -223,7 +223,9 @@ public class ReplicationClient implements Runnable{
             jo.put("log_data", Arrays.toString(Files.readAllBytes(Path.of(logPath))));
         }
 
+        System.out.println("before");
         transmitFileAsJSON(jo, nodeIP);
+        System.out.println("after");
     }
 
     public void transmitFileAsJSON(JSONObject json, String nodeIP) {
@@ -479,6 +481,7 @@ public class ReplicationClient implements Runnable{
     @PostMapping
     @RequestMapping(path="api/node")
     public void replicateFile(@RequestBody Message<byte[]> fileMessage) throws IOException {
+        System.out.println("Received file using REST");
         byte[] raw_data = fileMessage.getPayload();
         JSONObject jo = null;
         try {
