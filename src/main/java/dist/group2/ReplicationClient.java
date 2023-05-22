@@ -10,6 +10,11 @@ import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.ip.udp.UnicastReceivingChannelAdapter;
 import org.springframework.messaging.Message;
 import org.springframework.util.SerializationUtils;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -21,6 +26,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 
+@RequestMapping(path="api/node")
 public class ReplicationClient implements Runnable{
     private final int fileUnicastPort;
     private String nodeName = InetAddress.getLocalHost().getHostName();
@@ -217,32 +223,30 @@ public class ReplicationClient implements Runnable{
             jo.put("log_data", Arrays.toString(Files.readAllBytes(Path.of(logPath))));
         }
 
-        byte[] data = jo.toString().getBytes(StandardCharsets.UTF_8);
-
-        // Create TCP socket and output stream
-        Socket tcp_socket = new Socket(InetAddress.getByName(nodeIP), fileUnicastPort);
-        OutputStream os = tcp_socket.getOutputStream();
-
-        // Send data
-        os.write(data);
-        os.flush();
-
-        tcp_socket.close();
+        transmitFileAsJSON(jo, nodeIP);
     }
 
-    public void retransmitFile(JSONObject json, String nodeIP) throws IOException {
+    public void transmitFileAsJSON(JSONObject json, String nodeIP) throws IOException {
         // Write the JSON data into a buffer
         byte[] data = json.toString().getBytes(StandardCharsets.UTF_8);
 
-        // Create TCP socket and output stream
-        Socket tcp_socket = new Socket(InetAddress.getByName(nodeIP), fileUnicastPort);
-        OutputStream os = tcp_socket.getOutputStream();
+        //// Create TCP socket and output stream
+        //Socket tcp_socket = new Socket(InetAddress.getByName(nodeIP), fileUnicastPort);
+        //OutputStream os = tcp_socket.getOutputStream();
+//
+        //// Send data
+        //os.write(data);
+        //os.flush();
+//
+        //tcp_socket.close();
+        String url = "http://" + nodeIP + ":" + fileUnicastPort + "/api/node";
+        RestTemplate restTemplate = new RestTemplate();
 
-        // Send data
-        os.write(data);
-        os.flush();
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("fileMessage", data);
+        restTemplate.postForObject(url, requestBody, Void.class);
 
-        tcp_socket.close();
+        System.out.println("Sent replicated version of file " + json.get("name") + " to node " + nodeIP);
     }
 
     // ----------------------------------------- FILE UNICAST RECEIVER -------------------------------------------------
@@ -286,7 +290,7 @@ public class ReplicationClient implements Runnable{
                 String previousNodeIP = NamingClient.getIPAddress(previousNodeID);
 
                 // Retransfer the file and its log to the previous node
-                retransmitFile(jo, previousNodeIP);
+                transmitFileAsJSON(jo, previousNodeIP);
                 return 0;
             } else {
                 // Store the replicated file
@@ -448,5 +452,85 @@ public class ReplicationClient implements Runnable{
             }
         }
         return false;
+    }
+
+    // POST file using REST
+    @PostMapping
+    public void replicateFile(@RequestBody Message<byte[]> fileMessage) throws IOException {
+        byte[] raw_data = fileMessage.getPayload();
+        JSONObject jo = null;
+        try {
+            JSONParser parser = new JSONParser();
+            jo = (JSONObject) parser.parse(raw_data);
+        } catch (ParseException e) {
+            System.out.println("Received message but failed to parse data!");
+            System.out.println("\tRaw data received: " + Arrays.toString(raw_data));
+            System.out.println("\n\tException: \n\t"+e.getMessage());
+            DiscoveryClient.failure();
+        }
+
+        String file_name = (String) jo.get("name");
+        String extra_message = (String) jo.get("extra_message");
+        String data = (String) jo.get("data");
+        String log_data = (String) jo.get("log_data");
+
+        String file_path = replicated_file_path.toString() + '/' + file_name;
+        String log_file_path = log_path.toString() + '/' + file_name + ".log";
+
+        // Get current timestamp
+        String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(System.currentTimeMillis()));
+
+        System.out.println("Received unicast of type: " + extra_message);
+        if (Objects.equals(extra_message, "ENTRY_SHUTDOWN_REPLICATE")) {
+            boolean fileFoundLocally = fileStoredLocally(file_name);
+
+            if (fileFoundLocally) {
+                // Find the IP address of the previous node
+                int previousNodeID = DiscoveryClient.getPreviousID();
+                String previousNodeIP = NamingClient.getIPAddress(previousNodeID);
+
+                // Retransfer the file and its log to the previous node
+                transmitFileAsJSON(jo, previousNodeIP);
+            } else {
+                // Store the replicated file
+                FileOutputStream os_file = new FileOutputStream(file_path);
+                os_file.write(data.getBytes());
+                os_file.close();
+
+                // Store the log of the replicated file
+                os_file = new FileOutputStream(log_file_path);
+                String update_text = date + " - Change of owner caused by shutdown.\n";
+                os_file.write((log_data + update_text).getBytes());
+                os_file.close();
+            }
+        } else if (Objects.equals(extra_message, "ENTRY_CREATE")) {
+            // Store the replicated file
+            FileOutputStream os_file = new FileOutputStream(file_path);
+            os_file.write(data.getBytes());
+            os_file.close();
+
+            // Create a log for the file
+            os_file = new FileOutputStream(log_file_path);
+            String new_text = date + " - File is added & receives first owner.\n";
+            os_file.write(new_text.getBytes());
+            os_file.close();
+        } else if (Objects.equals(extra_message, "ENTRY_MODIFY")) {
+            // Store the replicated file
+            FileOutputStream os_file = new FileOutputStream(file_path);
+            os_file.write(data.getBytes());
+            os_file.close();
+
+            // Update the log
+            os_file = new FileOutputStream(log_file_path, true);
+            String update_text = date + " - Modification happened.\n";
+            os_file.write(update_text.getBytes());
+            os_file.close();
+        } else if (Objects.equals(extra_message, "ENTRY_DELETE")) {
+            Files.deleteIfExists(Path.of(file_path));
+            Files.deleteIfExists(Path.of(log_file_path));
+        } else if (Objects.equals(extra_message, "OVERFLOW")) {
+            System.out.println("ERROR - Overflow received when watching for events in the local_files directory!");
+            DiscoveryClient.failure();
+        }
     }
 }

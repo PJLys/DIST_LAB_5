@@ -30,7 +30,6 @@ public class ClientApplication {
         this.discoveryClient.init(name, IPAddress, unicastPortDiscovery, namingPort);
         ReplicationClient replicationClient = new ReplicationClient(fileUnicastPort);
 
-
         System.out.println("<---> " + name + " Instantiated with IP " + IPAddress + " <--->");
         discoveryClient.bootstrap();
         NamingClient.setBaseUrl(discoveryClient.getBaseUrl());
