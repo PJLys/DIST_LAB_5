@@ -486,10 +486,10 @@ public class ReplicationClient implements Runnable{
     }
 
     // POST file using REST
-    public void replicateFile(@RequestBody Message<JSONObject> fileMessage) throws IOException {
+    public void replicateFile(@RequestBody JSONObject fileMessage) throws IOException {
         System.out.println("Received file using REST");
-        JSONObject raw_data = fileMessage.getPayload();
-        JSONObject jo = null;
+        //JSONObject raw_data = fileMessage.getPayload();
+        JSONObject jo = fileMessage;
         //try {
         //    JSONParser parser = new JSONParser();
         //    jo = (JSONObject) parser.parse(raw_data);
