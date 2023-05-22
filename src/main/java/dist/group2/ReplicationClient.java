@@ -242,9 +242,9 @@ public class ReplicationClient implements Runnable{
         String url = "http://" + nodeIP + ":" + fileUnicastPort + "/api/node";
         RestTemplate restTemplate = new RestTemplate();
 
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("fileMessage", data);
-        restTemplate.postForObject(url, requestBody, Void.class);
+        //Map<String, Object> requestBody = new HashMap<>();
+        //requestBody.put("fileMessage", data);
+        restTemplate.postForObject(url, data, Void.class);
 
         System.out.println("Sent replicated version of file " + json.get("name") + " to node " + nodeIP);
     }
