@@ -223,7 +223,7 @@ public class ReplicationClient implements Runnable{
             jo.put("log_data", Arrays.toString(Files.readAllBytes(Path.of(logPath))));
         }
 
-        transmitFileAsJSON(jo, "172.0.0.1");
+        transmitFileAsJSON(jo, nodeIP);
     }
 
     public void transmitFileAsJSON(JSONObject json, String nodeIP) throws IOException {
