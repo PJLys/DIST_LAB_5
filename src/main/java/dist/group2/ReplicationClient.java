@@ -31,7 +31,8 @@ public class ReplicationClient implements Runnable{
     private final int fileUnicastPort;
     private String nodeName = InetAddress.getLocalHost().getHostName();
     private int nodeID = DiscoveryClient.hashValue(nodeName);
-    private String IPAddress = InetAddress.getLocalHost().getHostAddress();UnicastReceivingChannelAdapter fileAdapter;
+    private String IPAddress = InetAddress.getLocalHost().getHostAddress();
+    UnicastReceivingChannelAdapter fileAdapter;
 
     WatchService file_daemon = FileSystems.getDefault().newWatchService();
     private final Path local_file_path = Path.of(new File("").getAbsolutePath().concat("/src/local_files"));  //Stores the local files that need to be replicated
@@ -226,7 +227,11 @@ public class ReplicationClient implements Runnable{
         transmitFileAsJSON(jo, nodeIP);
     }
 
-    public void transmitFileAsJSON(JSONObject json, String nodeIP) throws IOException {
+    public void transmitFileAsJSON(JSONObject json, String nodeIP) {
+        // If the file is send to itself, use the loopback address.
+        if (nodeIP == IPAddress) {
+            nodeIP = "172.0.0.1";
+        }
         // Write the JSON data into a buffer
         byte[] data = json.toString().getBytes(StandardCharsets.UTF_8);
 
@@ -245,11 +250,10 @@ public class ReplicationClient implements Runnable{
         //Map<String, Object> requestBody = new HashMap<>();
         //requestBody.put("fileMessage", data);
         try {
-
             restTemplate.postForObject(url, data, Void.class);
         } catch (Exception e) {
+            System.out.println("ERROR - posting file throws IOException");
             System.out.println("\tRaw data received: " + e.getStackTrace());
-            System.out.println("\n\tException: \n\t"+e.getMessage());
         }
         // if (nodeIP !=)
         restTemplate.postForObject(url, data, Void.class);

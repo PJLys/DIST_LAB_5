@@ -1,5 +1,6 @@
 package dist.group2;
 
+import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -12,6 +13,7 @@ import java.net.InetAddress;
 public class ClientApplication {
     public static ApplicationContext context;
     private DiscoveryClient discoveryClient;
+    Thread replicationthread;
 
     @Autowired
     public ClientApplication(DiscoveryClient discoveryClient) throws IOException {
@@ -35,18 +37,17 @@ public class ClientApplication {
         NamingClient.setBaseUrl(discoveryClient.getBaseUrl());
         NamingClient.setName(name);
 
-        System.out.println(1);
         replicationClient.addFiles();
-        System.out.println(2);
         replicationClient.setFileDirectoryWatchDog();
-        System.out.println(3);
         replicationClient.replicateFiles();
-        System.out.println(4);
 
-        Thread replicationthread = new Thread(replicationClient);
-        System.out.println(5);
+        replicationthread = new Thread(replicationClient);
         replicationthread.start();
-        System.out.println(6);
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        replicationthread.stop();
     }
 
     public static void main(String[] args) {
