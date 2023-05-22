@@ -223,9 +223,7 @@ public class ReplicationClient implements Runnable{
             jo.put("log_data", Arrays.toString(Files.readAllBytes(Path.of(logPath))));
         }
 
-        System.out.println("before");
         transmitFileAsJSON(jo, nodeIP);
-        System.out.println("after");
     }
 
     public void transmitFileAsJSON(JSONObject json, String nodeIP) {
@@ -251,7 +249,9 @@ public class ReplicationClient implements Runnable{
         //Map<String, Object> requestBody = new HashMap<>();
         //requestBody.put("fileMessage", data);
         try {
+            System.out.println("before");
             restTemplate.postForObject(url, data, Void.class);
+            System.out.println("after");
         } catch (Exception e) {
             System.out.println("ERROR - posting file throws IOException");
             System.out.println("\tRaw data received: " + e.getStackTrace());
