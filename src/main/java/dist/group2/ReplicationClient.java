@@ -223,7 +223,7 @@ public class ReplicationClient implements Runnable{
             jo.put("log_data", Arrays.toString(Files.readAllBytes(Path.of(logPath))));
         }
 
-        transmitFileAsJSON(jo, nodeIP);
+        transmitFileAsJSON(jo, "172.0.0.1");
     }
 
     public void transmitFileAsJSON(JSONObject json, String nodeIP) throws IOException {
@@ -251,6 +251,7 @@ public class ReplicationClient implements Runnable{
             System.out.println("\tRaw data received: " + e.getStackTrace());
             System.out.println("\n\tException: \n\t"+e.getMessage());
         }
+        // if (nodeIP !=)
         restTemplate.postForObject(url, data, Void.class);
 
         System.out.println("Sent replicated version of file " + json.get("name") + " to node " + nodeIP);
@@ -351,7 +352,7 @@ public class ReplicationClient implements Runnable{
 
 
 
-    
+
         //if (Objects.equals(extra_message, "warning")) {
         //    System.out.println("I am the owner of " + fileName + " and got a warning.");
         //    if (wasDownloaded(file_path)) {
