@@ -244,6 +244,13 @@ public class ReplicationClient implements Runnable{
 
         //Map<String, Object> requestBody = new HashMap<>();
         //requestBody.put("fileMessage", data);
+        try {
+
+            restTemplate.postForObject(url, data, Void.class);
+        } catch (Exception e) {
+            System.out.println("\tRaw data received: " + e.getStackTrace());
+            System.out.println("\n\tException: \n\t"+e.getMessage());
+        }
         restTemplate.postForObject(url, data, Void.class);
 
         System.out.println("Sent replicated version of file " + json.get("name") + " to node " + nodeIP);
