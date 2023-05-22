@@ -10,10 +10,7 @@ import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.ip.udp.UnicastReceivingChannelAdapter;
 import org.springframework.messaging.Message;
 import org.springframework.util.SerializationUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
@@ -26,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 
+@RestController
 @RequestMapping(path="api/node")
 public class ReplicationClient implements Runnable{
     private final int fileUnicastPort;
@@ -478,7 +476,7 @@ public class ReplicationClient implements Runnable{
     }
 
     // POST file using REST
-    @PostMapping
+    @PostMapping()
     public void replicateFile(@RequestBody Message<JSONObject> fileMessage) throws IOException {
         System.out.println("Received file using REST");
         JSONObject raw_data = fileMessage.getPayload();
