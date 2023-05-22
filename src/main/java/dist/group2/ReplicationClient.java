@@ -26,7 +26,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 
-@RequestMapping(path="api/node")
 public class ReplicationClient implements Runnable{
     private final int fileUnicastPort;
     private String nodeName = InetAddress.getLocalHost().getHostName();
@@ -137,6 +136,9 @@ public class ReplicationClient implements Runnable{
         File folder = new File(local_file_path.toString());
         File[] files = folder.listFiles();
 
+        for (File file2 : files) {
+            System.out.println("Replicating file: " + file2.toString()); }
+
         for (File file : files) {
             System.out.println("Replicating file: " + file.toString());
             if (file.isFile()) {
@@ -229,8 +231,6 @@ public class ReplicationClient implements Runnable{
 
     public void transmitFileAsJSON(JSONObject json, String nodeIP) {
         // If the file is send to itself, use the loopback address.
-        System.out.println(IPAddress);
-        System.out.println(nodeIP);
         if (Objects.equals(nodeIP, IPAddress)) {
             nodeIP = "172.0.0.1";
         }
@@ -480,6 +480,7 @@ public class ReplicationClient implements Runnable{
 
     // POST file using REST
     @PostMapping
+    @RequestMapping(path="api/node")
     public void replicateFile(@RequestBody Message<byte[]> fileMessage) throws IOException {
         byte[] raw_data = fileMessage.getPayload();
         JSONObject jo = null;
