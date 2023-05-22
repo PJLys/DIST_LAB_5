@@ -230,6 +230,7 @@ public class ReplicationClient implements Runnable{
         // If the file is send to itself, use the loopback address.
         if (Objects.equals(nodeIP, IPAddress)) {
             nodeIP = "172.0.0.1";
+            return;
         }
         // Write the JSON data into a buffer
         byte[] data = json.toString().getBytes(StandardCharsets.UTF_8);
