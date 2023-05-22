@@ -504,7 +504,6 @@ public class ReplicationClient implements Runnable{
         String file_name = (String) jo.get("name");
         String extra_message = (String) jo.get("extra_message");
         String data = (String) jo.get("data");
-        String log_data = (String) jo.get("log_data");
 
         String file_path = replicated_file_path.toString() + '/' + file_name;
         String log_file_path = log_path.toString() + '/' + file_name + ".log";
@@ -532,6 +531,7 @@ public class ReplicationClient implements Runnable{
                 // Store the log of the replicated file
                 os_file = new FileOutputStream(log_file_path);
                 String update_text = date + " - Change of owner caused by shutdown.\n";
+                String log_data = (String) jo.get("log_data");
                 os_file.write((log_data + update_text).getBytes());
                 os_file.close();
             }
