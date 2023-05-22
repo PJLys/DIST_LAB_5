@@ -26,6 +26,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 
+@RequestMapping(path="api/node")
 public class ReplicationClient implements Runnable{
     private final int fileUnicastPort;
     private String nodeName = InetAddress.getLocalHost().getHostName();
@@ -244,7 +245,7 @@ public class ReplicationClient implements Runnable{
         //os.flush();
 //
         //tcp_socket.close();
-        String url = "http://" + nodeIP + ":" + 8080 + "/api/node";
+        String url = "http://" + nodeIP + "/api/node";
         RestTemplate restTemplate = new RestTemplate();
 
         Map<String, Object> requestBody = new HashMap<>();
@@ -478,7 +479,6 @@ public class ReplicationClient implements Runnable{
 
     // POST file using REST
     @PostMapping
-    @RequestMapping(path="api/node")
     public void replicateFile(@RequestBody Message<JSONObject> fileMessage) throws IOException {
         System.out.println("Received file using REST");
         JSONObject raw_data = fileMessage.getPayload();
