@@ -487,10 +487,9 @@ public class ReplicationClient implements Runnable{
     }
 
     // POST file using REST
-    public void replicateFile(JSONObject fileMessage) throws IOException {
-        System.out.println("Received file using REST");
+    public void replicateFile(JSONObject jo) throws IOException {
+        System.out.println("Received file using REST: " + jo.toString());
         //JSONObject raw_data = fileMessage.getPayload();
-        JSONObject jo = fileMessage;
         //try {
         //    JSONParser parser = new JSONParser();
         //    jo = (JSONObject) parser.parse(raw_data);
@@ -505,6 +504,9 @@ public class ReplicationClient implements Runnable{
         String extra_message = (String) jo.get("extra_message");
         String data = (String) jo.get("data");
 
+        System.out.println(file_name);
+        System.out.println(extra_message);
+        System.out.println(data);
         String file_path = replicated_file_path.toString() + '/' + file_name;
         String log_file_path = log_path.toString() + '/' + file_name + ".log";
 
