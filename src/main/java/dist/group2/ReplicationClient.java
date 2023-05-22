@@ -23,8 +23,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 
-@RestController
-@RequestMapping(path="api/node")
 public class ReplicationClient implements Runnable{
     private final int fileUnicastPort;
     private String nodeName = InetAddress.getLocalHost().getHostName();
