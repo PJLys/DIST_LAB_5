@@ -6,6 +6,9 @@ import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
 import org.hibernate.cfg.NotYetImplementedException;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.ip.udp.UnicastReceivingChannelAdapter;
 import org.springframework.messaging.Message;
@@ -248,8 +251,14 @@ public class ReplicationClient implements Runnable{
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("file", json);
+
+        // Specify media type
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+        
         try {
-            restTemplate.postForObject(url, requestBody, Void.class);
+            restTemplate.postForObject(url, requestEntity, Void.class);
         } catch (Exception e) {
             System.out.println("ERROR - posting file throws IOException");
             System.out.println("\tRaw data received: " + e.getStackTrace());
