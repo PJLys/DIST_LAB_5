@@ -243,7 +243,7 @@ public class ReplicationClient implements Runnable{
         //os.flush();
 //
         //tcp_socket.close();
-        String url = "http://" + nodeIP + "/api/node";
+        String url = "http://" + nodeIP + ":" + 8080 + "/api/node";
         RestTemplate restTemplate = new RestTemplate();
 
         Map<String, Object> requestBody = new HashMap<>();
