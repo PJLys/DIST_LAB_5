@@ -259,7 +259,7 @@ public class ReplicationClient implements Runnable{
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 
         try {
-            restTemplate.postForObject(url, requestEntity, Void.class);
+            restTemplate.postForObject(url, requestBody, Void.class);
         } catch (Exception e) {
             System.out.println("ERROR - posting file throws IOException");
             System.out.println("\tRaw data received: " + e.getStackTrace());
@@ -486,7 +486,7 @@ public class ReplicationClient implements Runnable{
     }
 
     // POST file using REST
-    public void replicateFile(@RequestBody JSONObject fileMessage) throws IOException {
+    public void replicateFile(JSONObject fileMessage) throws IOException {
         System.out.println("Received file using REST");
         //JSONObject raw_data = fileMessage.getPayload();
         JSONObject jo = fileMessage;
