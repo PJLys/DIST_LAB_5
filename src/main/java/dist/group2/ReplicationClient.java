@@ -230,6 +230,7 @@ public class ReplicationClient implements Runnable{
         // If the file is send to itself, use the loopback address.
         if (Objects.equals(nodeIP, IPAddress)) {
             nodeIP = "172.0.0.1";
+            return;
         }
         // Write the JSON data into a buffer
         byte[] data = json.toString().getBytes(StandardCharsets.UTF_8);
@@ -249,14 +250,12 @@ public class ReplicationClient implements Runnable{
         //Map<String, Object> requestBody = new HashMap<>();
         //requestBody.put("fileMessage", data);
         try {
-            System.out.println("before");
             restTemplate.postForObject(url, data, Void.class);
-            System.out.println("after");
         } catch (Exception e) {
             System.out.println("ERROR - posting file throws IOException");
             System.out.println("\tRaw data received: " + e.getStackTrace());
         }
-        // if (nodeIP !=)
+
         restTemplate.postForObject(url, data, Void.class);
 
         System.out.println("Sent replicated version of file " + json.get("name") + " to node " + nodeIP);
