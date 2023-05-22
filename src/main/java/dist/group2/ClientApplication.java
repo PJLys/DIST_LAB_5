@@ -30,7 +30,7 @@ public class ClientApplication {
 
         Communicator.init(multicastGroup, multicastPort, fileUnicastPort, multicastIP, unicastPortDiscovery);
         this.discoveryClient.init(name, IPAddress, unicastPortDiscovery, namingPort);
-        ReplicationClient replicationClient = new ReplicationClient(fileUnicastPort);
+        ReplicationClient replicationClient = new ReplicationClient();
         ReplicationController replicationController = new ReplicationController(replicationClient);
 
         System.out.println("<---> " + name + " Instantiated with IP " + IPAddress + " <--->");
