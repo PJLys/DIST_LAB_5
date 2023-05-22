@@ -476,7 +476,6 @@ public class ReplicationClient implements Runnable{
     }
 
     // POST file using REST
-    @PostMapping()
     public void replicateFile(@RequestBody Message<JSONObject> fileMessage) throws IOException {
         System.out.println("Received file using REST");
         JSONObject raw_data = fileMessage.getPayload();
