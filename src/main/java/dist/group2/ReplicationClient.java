@@ -9,6 +9,7 @@ import org.hibernate.cfg.NotYetImplementedException;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.ip.udp.UnicastReceivingChannelAdapter;
 import org.springframework.messaging.Message;
+import org.springframework.stereotype.Service;
 import org.springframework.util.SerializationUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -23,6 +24,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 
+@Service
 public class ReplicationClient implements Runnable{
     private final int fileUnicastPort;
     private String nodeName = InetAddress.getLocalHost().getHostName();
