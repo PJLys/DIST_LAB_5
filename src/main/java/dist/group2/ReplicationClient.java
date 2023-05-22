@@ -229,7 +229,9 @@ public class ReplicationClient implements Runnable{
 
     public void transmitFileAsJSON(JSONObject json, String nodeIP) {
         // If the file is send to itself, use the loopback address.
-        if (nodeIP == IPAddress) {
+        System.out.println(IPAddress);
+        System.out.println(nodeIP);
+        if (Objects.equals(nodeIP, IPAddress)) {
             nodeIP = "172.0.0.1";
         }
         // Write the JSON data into a buffer
@@ -263,10 +265,10 @@ public class ReplicationClient implements Runnable{
 
     // ----------------------------------------- FILE UNICAST RECEIVER -------------------------------------------------
 
-    /**
-     * Update a file when it has been remotely edited.
-     * @param message: Message received from the Communicator
-     */
+    //**
+    // * Update a file when it has been remotely edited.
+    // * @param message: Message received from the Communicator
+    // */
     //@ServiceActivator(inputChannel = "FileUnicast")
     //public int fileUnicastEvent(Message<byte[]> message) throws IOException {
     //    byte[] raw_data = message.getPayload();
