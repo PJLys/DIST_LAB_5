@@ -41,6 +41,7 @@ public class NamingClient {
 
     public static String findFile(String fileName) {
         String url = baseUrl + "?fileName=" + fileName;
+        System.out.println("Baseurl: " + baseUrl);
         try {
             String IPAddress = restTemplate.getForObject(url, String.class);
             System.out.println("<" + name + "> - " + fileName + " is stored at IPAddress " + IPAddress);
