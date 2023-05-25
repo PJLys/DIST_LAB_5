@@ -252,6 +252,7 @@ public class ReplicationClient implements Runnable{
         // Send the replicated files and their logs to the previous node which will become the new owner of the file.
         // When the previous node already stores this file locally -> send it to its previous node
         for (File file : replicatedFiles) {
+            System.out.println("FILENAME " + file.getName());
             System.out.println("Replicating file " + file.getName() + " to node " + previousNodeIP);
 
             // Get info of the file
