@@ -221,7 +221,7 @@ public class ReplicationClient implements Runnable{
 
         // Get a list of the files in both directories
         File[] localFiles = new File(local_file_path.toString()).listFiles();
-        File[] replicatedFiles = new File(local_file_path.toString()).listFiles();
+        File[] replicatedFiles = new File(replicated_file_path.toString()).listFiles();
 
         // Test if one of the directories cannot be found
         if (localFiles == null || replicatedFiles == null) {
@@ -234,7 +234,6 @@ public class ReplicationClient implements Runnable{
         for (File file : localFiles) {
             // Get info of the file
             String fileName = file.getName();
-            System.out.println("FILENAME " + fileName);
             String filePath = local_file_path.toString() + '/' + fileName;
 
             // The destination is the owner of the file instead of the previous node
@@ -245,14 +244,13 @@ public class ReplicationClient implements Runnable{
             // Warn the owner of the file to delete the replicated file
             sendFileToNode(filePath, null, destinationIP, "ENTRY_DELETE");
             if (!Objects.equals(destinationIP, IPAddress)) {
-                sleep(1000);
+                sleep(10);
             }
         }
 
         // Send the replicated files and their logs to the previous node which will become the new owner of the file.
         // When the previous node already stores this file locally -> send it to its previous node
         for (File file : replicatedFiles) {
-            System.out.println("FILENAME " + file.getName());
             System.out.println("Replicating file " + file.getName() + " to node " + previousNodeIP);
 
             // Get info of the file
@@ -263,7 +261,7 @@ public class ReplicationClient implements Runnable{
             // Transfer the file and its log to the previous node
             sendFileToNode(filePath, logPath, previousNodeIP, "ENTRY_SHUTDOWN_REPLICATE");
             if (!Objects.equals(previousNodeIP, IPAddress)) {
-                sleep(1000);
+                sleep(10);
             }
         }
     }
