@@ -181,7 +181,7 @@ public class ReplicationClient implements Runnable{
                     System.out.println(1);
                     String file_path = replicated_file_path.toString() + '/' + file_name;
                     System.out.println(2);
-                    String log_file_path = log_path.toString() +  + '/' + file_name + ".log";;
+                    String log_file_path = log_path.toString() + '/' + file_name + ".log";;
                     sendFileToNode(file_path, log_file_path, file_owner, "ENTRY_CREATE");
                     System.out.println(3);
 
@@ -251,7 +251,7 @@ public class ReplicationClient implements Runnable{
     }
 
     public void sendFileToNode(String filePath, String logPath, String nodeIP, String extra_message) throws IOException {
-        System.out.println(filePath + "  "+ logPath + "  "+ nodeIP + "  "+ extra_message);
+        System.out.println(filePath + "  " + logPath + "  " + nodeIP + "  " + extra_message);
 
         // Create JSON object from File
         JSONObject jo = new JSONObject();
