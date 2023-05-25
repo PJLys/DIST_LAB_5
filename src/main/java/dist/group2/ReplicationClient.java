@@ -155,13 +155,16 @@ public class ReplicationClient implements Runnable{
                 String fileName = file.getName();
                 String filePath = local_file_path.toString() + '/' + fileName;
                 String replicator_loc = NamingClient.findFile(Path.of(filePath).getFileName().toString());
-                System.out.println("Send file " + file.toString() + " to " + replicator_loc);
+                System.out.println("Send file " + file + " to " + replicator_loc);
                 sendFileToNode( filePath, null, replicator_loc, "ENTRY_CREATE");
             }
         }
     }
 
-    public void changeOwnerWhenNodeIsAdded() throws IOException {
+    public void changeOwnerWhenNodeIsAdded() throws IOException, InterruptedException {
+        // Wait so the new node has time to start up
+        Thread.sleep(250);
+
         System.out.println("Node is added to the network, check if files need to change owner");
         File folder = new File(replicated_file_path.toString());
         File[] files = folder.listFiles();
@@ -253,8 +256,6 @@ public class ReplicationClient implements Runnable{
         if (filePath.endsWith(".swp")) {
             return;
         }
-
-        System.out.println(filePath + "  " + logPath + "  " + nodeIP + "  " + extra_message);
 
         // Create JSON object from File
         JSONObject jo = new JSONObject();

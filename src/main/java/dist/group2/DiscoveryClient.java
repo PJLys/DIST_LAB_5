@@ -163,7 +163,7 @@ public class DiscoveryClient {
     }
 
     @ServiceActivator(inputChannel = "Multicast")
-    private void multicastEvent(Message<byte[]> message) throws IOException {
+    private void multicastEvent(Message<byte[]> message) throws IOException, InterruptedException {
         byte[] payload = message.getPayload();
         DatagramPacket dataPacket = new DatagramPacket(payload, payload.length);
 
