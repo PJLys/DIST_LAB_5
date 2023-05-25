@@ -173,9 +173,6 @@ public class ReplicationClient implements Runnable{
     }
 
     public void changeOwnerWhenNodeIsAdded() throws IOException, InterruptedException {
-        // Wait so the new node has time to start up
-        Thread.sleep(250);
-
         System.out.println("Node is added to the network, check if files need to change owner");
         File folder = new File(replicated_file_path.toString());
         File[] files = folder.listFiles();

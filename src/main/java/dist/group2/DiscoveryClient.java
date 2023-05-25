@@ -170,10 +170,14 @@ public class DiscoveryClient {
         String RxData = new String(dataPacket.getData(), 0, dataPacket.getLength());
         System.out.println(name + " - Received multicast message from other node: " + RxData);
 
+        // Wait so the new node has time to start up
+        sleep(250);
+
         // Use this multicast data to update your previous & next node IDs
         compareIDs(RxData);
 
-        // ReplicationClient.getInstance().changeOwnerWhenNodeIsAdded();
+        // Check if there are files which have to change owner to the new node
+        ReplicationClient.getInstance().changeOwnerWhenNodeIsAdded();
     }
 
     @ServiceActivator(inputChannel = "DiscoveryUnicast")
@@ -210,8 +214,8 @@ public class DiscoveryClient {
     private void respondToMulticast(String newNodeIP, int currentID, String previousOrNext) {
         String message = currentID + "|" + previousOrNext;
         try {
-            Communicator.sendUnicast(message, newNodeIP, unicastPort);
             System.out.println("<---> Send response to multicast of node " + newNodeIP + " <--->");
+            Communicator.sendUnicast(message, newNodeIP, unicastPort);
         } catch (IOException e) {
             System.out.println("Responding to multicast failed");
             failure();
