@@ -76,7 +76,7 @@ public class Communicator {
     // -----------------------------------------------------------------------------------------------------------------
     @Bean
     public MulticastReceivingChannelAdapter multicastReceiver(DatagramSocket socket) {
-        MulticastReceivingChannelAdapter adapter = new MulticastReceivingChannelAdapter(multicastIP, 4446);
+        MulticastReceivingChannelAdapter adapter = new MulticastReceivingChannelAdapter(Communicator.multicastIP, Communicator.multicastPort);
         adapter.setOutputChannelName("Multicast");
         adapter.setSocket(socket);
         return adapter;
