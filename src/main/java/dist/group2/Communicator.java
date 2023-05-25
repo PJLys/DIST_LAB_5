@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-@Service
+
 public class Communicator {
     static MulticastSocket multicastSocket;
     static String multicastIP;
@@ -78,6 +78,7 @@ public class Communicator {
     // -----------------------------------------------------------------------------------------------------------------
     @Bean
     public MulticastReceivingChannelAdapter multicastReceiver(DatagramSocket socket) {
+        System.out.println("MULTICAST MADE");
         MulticastReceivingChannelAdapter adapter = new MulticastReceivingChannelAdapter(multicastIP, multicastPort);
         adapter.setOutputChannelName("Multicast");
         adapter.setSocket(socket);
@@ -93,7 +94,7 @@ public class Communicator {
     }
 
     @Bean
-    public UnicastReceivingChannelAdapter unicastReceiver() {
+    public UnicastReceivingChannelAdapter discoveryUnicastReceiver() {
         UnicastReceivingChannelAdapter adapter = new UnicastReceivingChannelAdapter(unicastReceivePortDiscovery);
         adapter.setOutputChannelName("DiscoveryUnicast");
         return adapter;
