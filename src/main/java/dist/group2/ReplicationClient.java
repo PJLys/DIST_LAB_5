@@ -245,7 +245,7 @@ public class ReplicationClient implements Runnable{
             // Warn the owner of the file to delete the replicated file
             sendFileToNode(filePath, null, destinationIP, "ENTRY_DELETE");
             if (!Objects.equals(destinationIP, IPAddress)) {
-                sleep(300);
+                sleep(100);
             }
         }
 
@@ -262,7 +262,7 @@ public class ReplicationClient implements Runnable{
             // Transfer the file and its log to the previous node
             sendFileToNode(filePath, logPath, previousNodeIP, "ENTRY_SHUTDOWN_REPLICATE");
             if (!Objects.equals(previousNodeIP, IPAddress)) {
-                sleep(300);
+                sleep(100);
             }
         }
     }
@@ -388,28 +388,40 @@ public class ReplicationClient implements Runnable{
         String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(System.currentTimeMillis()));
 
         if (Objects.equals(extra_message, "ENTRY_SHUTDOWN_REPLICATE")) {
-            boolean fileFoundLocally = fileStoredLocally(file_name);
+            // Store the replicated file
+            FileOutputStream os_file = new FileOutputStream(file_path);
+            os_file.write(data.getBytes());
+            os_file.close();
 
-            if (fileFoundLocally) {
-                // Find the IP address of the previous node
-                int previousNodeID = DiscoveryClient.getPreviousID();
-                String previousNodeIP = NamingClient.getIPAddress(previousNodeID);
+            // Store the log of the replicated file
+            os_file = new FileOutputStream(log_file_path);
+            String update_text = date + " - Change of owner caused by shutdown.\n";
+            String log_data = (String) json.get("log_data");
+            os_file.write((log_data + update_text).getBytes());
+            os_file.close();
 
-                // Retransfer the file and its log to the previous node
-                updateFile(json, previousNodeIP);
-            } else {
-                // Store the replicated file
-                FileOutputStream os_file = new FileOutputStream(file_path);
-                os_file.write(data.getBytes());
-                os_file.close();
-
-                // Store the log of the replicated file
-                os_file = new FileOutputStream(log_file_path);
-                String update_text = date + " - Change of owner caused by shutdown.\n";
-                String log_data = (String) json.get("log_data");
-                os_file.write((log_data + update_text).getBytes());
-                os_file.close();
-            }
+            //boolean fileFoundLocally = fileStoredLocally(file_name);
+//
+            //if (fileFoundLocally) {
+            //    // Find the IP address of the previous node
+            //    int previousNodeID = DiscoveryClient.getPreviousID();
+            //    String previousNodeIP = NamingClient.getIPAddress(previousNodeID);
+//
+            //    // Retransfer the file and its log to the previous node
+            //    updateFile(json, previousNodeIP);
+            //} else {
+            //    // Store the replicated file
+            //    FileOutputStream os_file = new FileOutputStream(file_path);
+            //    os_file.write(data.getBytes());
+            //    os_file.close();
+//
+            //    // Store the log of the replicated file
+            //    os_file = new FileOutputStream(log_file_path);
+            //    String update_text = date + " - Change of owner caused by shutdown.\n";
+            //    String log_data = (String) json.get("log_data");
+            //    os_file.write((log_data + update_text).getBytes());
+            //    os_file.close();
+            //}
         } else if (Objects.equals(extra_message, "ENTRY_CREATE")) {
             // Store the replicated file
             FileOutputStream os_file = new FileOutputStream(file_path);
