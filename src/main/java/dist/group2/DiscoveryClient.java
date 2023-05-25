@@ -173,7 +173,7 @@ public class DiscoveryClient {
         // Use this multicast data to update your previous & next node IDs
         compareIDs(RxData);
 
-        ReplicationClient.getInstance().changeOwnerWhenNodeIsAdded();
+        //ReplicationClient.getInstance().changeOwnerWhenNodeIsAdded();
     }
 
     @ServiceActivator(inputChannel = "DiscoveryUnicast")
