@@ -8,8 +8,10 @@ import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 @Service
@@ -160,7 +162,7 @@ public class DiscoveryClient {
     }
 
     @ServiceActivator(inputChannel = "Multicast")
-    private void multicastEvent(Message<byte[]> message) {
+    private void multicastEvent(Message<byte[]> message) throws IOException {
         byte[] payload = message.getPayload();
         DatagramPacket dataPacket = new DatagramPacket(payload, payload.length);
 
@@ -169,6 +171,8 @@ public class DiscoveryClient {
 
         // Use this multicast data to update your previous & next node IDs
         compareIDs(RxData);
+
+        ReplicationClient.getInstance().changeOwnerWhenNodeIsAdded();
     }
 
     @ServiceActivator(inputChannel = "DiscoveryUnicast")

@@ -37,8 +37,16 @@ public class ReplicationClient implements Runnable{
     private final Path local_file_path = Path.of(new File("").getAbsolutePath().concat("/src/local_files"));  //Stores the local files that need to be replicated
     private final Path replicated_file_path = Path.of(new File("").getAbsolutePath().concat("/src/replicated_files"));  //Stores the local files that need to be replicated
     private final Path log_path = Path.of(new File("").getAbsolutePath().concat("/src/log_files"));  //Stores the local files that need to be replicated
+    private static ReplicationClient client=null;
 
-    public ReplicationClient() throws IOException {}
+    private ReplicationClient() throws IOException {}
+
+    public static ReplicationClient getInstance() throws IOException {
+        if (client == null) {
+            client = new ReplicationClient();
+        }
+        return client;
+    }
 
     public void createDirectories() {
         createDirectory(local_file_path);
@@ -61,7 +69,7 @@ public class ReplicationClient implements Runnable{
         }
     }
 
-    public void setFileDirectoryWatchDog() throws IOException {
+    public void setFileDirectoryWatchDog() {
         try {
             this.local_file_path.register(file_daemon,
                     StandardWatchEventKinds.ENTRY_CREATE,
@@ -135,12 +143,12 @@ public class ReplicationClient implements Runnable{
         }
     }
 
-    public List<String> replicateFiles() throws IOException {
-        System.out.println("replicate files");
-        List<String> localFiles = new ArrayList<>();
+    public void replicateFiles() throws IOException {
+        System.out.println("Replicate local files");
         File folder = new File(local_file_path.toString());
         File[] files = folder.listFiles();
 
+        assert files != null;
         for (File file : files) {
             System.out.println("Replicating file: " + file.toString());
             if (file.isFile()) {
@@ -151,7 +159,34 @@ public class ReplicationClient implements Runnable{
                 sendFileToNode( filePath, null, replicator_loc, "ENTRY_CREATE");
             }
         }
-        return localFiles;
+    }
+
+    public void changeOwnerWhenNodeIsAdded() throws IOException {
+        File folder = new File(replicated_file_path.toString());
+        File[] files = folder.listFiles();
+
+        assert files != null;
+        for (File file : files) {
+            if (file.isFile()) {
+                String file_name = file.getName();
+                String file_owner = NamingClient.findFile(file_name);
+
+                if (Objects.equals(IPAddress, file_owner)) {
+                    // The new node does not become the new owner of the file
+                } else {
+                    System.out.println("Change in file owner after new node joined. Send file " + file_name + " to its new owner " + file_owner);
+
+                    // Replicate the file to the new owner
+                    String file_path = replicated_file_path.toString() + '/' + file_name;
+                    String log_file_path = log_path.toString() +  + '/' + file_name + ".log";;
+                    sendFileToNode(file_path, log_file_path, file_owner, "ENTRY_CREATE");
+
+                    // Delete file on this node
+                    Files.deleteIfExists(Path.of(file_path));
+                    Files.deleteIfExists(Path.of(log_file_path));
+                }
+            }
+        }
     }
 
     @PreDestroy
@@ -179,6 +214,7 @@ public class ReplicationClient implements Runnable{
         }
 
         // Send a warning to the owners of these files so they can delete their replicated versions
+        assert localFiles != null;
         for (File file : localFiles) {
             // Get info of the file
             String fileName = file.getName();
