@@ -211,7 +211,6 @@ public class ReplicationClient implements Runnable{
     public void sendFileToNode(String filePath, String logPath, String nodeIP, String extra_message) throws IOException {
         System.out.println(filePath + "  "+ logPath + "  "+ nodeIP + "  "+ extra_message);
 
-
         // Create JSON object from File
         JSONObject jo = new JSONObject();
 
@@ -222,7 +221,13 @@ public class ReplicationClient implements Runnable{
         // Put the payload data in the JSON object
         jo.put("name", fileName);
         jo.put("extra_message", extra_message);
-        jo.put("data", Arrays.toString(Files.readAllBytes(fileLocation)));
+
+        // Only send data if the file still exists
+        if (Objects.equals(extra_message, "ENTRY_DELETE")) {
+            jo.put("data", null);
+        } else {
+            jo.put("data", Arrays.toString(Files.readAllBytes(fileLocation)));
+        }
 
         // Also include the data of the log file when necessary
         if (logPath == null) {
