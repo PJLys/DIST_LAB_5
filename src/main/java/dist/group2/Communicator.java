@@ -78,7 +78,7 @@ public class Communicator {
     // -----------------------------------------------------------------------------------------------------------------
     @Bean
     public MulticastReceivingChannelAdapter multicastReceiver(DatagramSocket socket) {
-        System.out.println("MULTICAST MADE");
+        System.out.println("MULTICAST MADE\n\n\n\n\n\n\n");
         MulticastReceivingChannelAdapter adapter = new MulticastReceivingChannelAdapter(multicastIP, multicastPort);
         adapter.setOutputChannelName("Multicast");
         adapter.setSocket(socket);
