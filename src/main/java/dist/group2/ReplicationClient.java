@@ -229,23 +229,7 @@ public class ReplicationClient implements Runnable{
             DiscoveryClient.failure();
         }
 
-        // Send a warning to the owners of these files so they can delete their replicated versions
-        assert localFiles != null;
-        for (File file : localFiles) {
-            // Get info of the file
-            String fileName = file.getName();
-            System.out.println("FILENAME " + fileName);
-            String filePath = local_file_path.toString() + '/' + fileName;
 
-            // The destination is the owner of the file instead of the previous node
-            String destinationIP = NamingClient.findFile(fileName);
-
-            System.out.println("Send warning to delete file " + file.getName() + " to node " + destinationIP);
-
-            // Warn the owner of the file to delete the replicated file
-            sendFileToNode(filePath, null, destinationIP, "ENTRY_DELETE");
-            sleep(300);
-        }
 
         // Send the replicated files and their logs to the previous node which will become the new owner of the file.
         // When the previous node already stores this file locally -> send it to its previous node
