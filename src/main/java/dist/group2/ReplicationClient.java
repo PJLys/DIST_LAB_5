@@ -162,6 +162,7 @@ public class ReplicationClient implements Runnable{
     }
 
     public void changeOwnerWhenNodeIsAdded() throws IOException {
+        System.out.println("Node is added to the network, check if files need to change owner");
         File folder = new File(replicated_file_path.toString());
         File[] files = folder.listFiles();
 
