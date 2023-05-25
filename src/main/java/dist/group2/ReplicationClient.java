@@ -88,8 +88,8 @@ public class ReplicationClient implements Runnable{
 
         try {
             String filePath = local_file_path.toString() + '/' + filename;
-            
-            if (filepath.endsWith(".swp")) {
+
+            if (filePath.endsWith(".swp")) {
                 return 0;
             }
 
