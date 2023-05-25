@@ -171,7 +171,7 @@ public class DiscoveryClient {
         System.out.println(name + " - Received multicast message from other node: " + RxData);
 
         // Wait so the new node has time to start up
-        sleep(100);
+        sleep(250);
 
         // Use this multicast data to update your previous & next node IDs
         compareIDs(RxData);
