@@ -43,11 +43,8 @@ public class ClientApplication {
         replicationClient.setFileDirectoryWatchDog();
         replicationClient.replicateFiles();
 
-        System.out.println("before");
         replicationthread = new Thread(replicationClient);
-        System.out.println("after");
         replicationthread.start();
-        System.out.println("after sun");
     }
 
     @PreDestroy
