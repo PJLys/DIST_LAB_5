@@ -269,7 +269,7 @@ public class ReplicationClient implements Runnable{
             System.out.println("\tRaw data received: " + Arrays.toString(e.getStackTrace()));
         }
 
-        restTemplate.postForObject(url, data, Void.class);
+        //restTemplate.postForObject(url, data, Void.class);
 
         System.out.println("Sent replicated version of file " + json.get("name") + " to node " + nodeIP);
     }
