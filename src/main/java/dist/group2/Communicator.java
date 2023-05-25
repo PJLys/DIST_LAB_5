@@ -104,12 +104,4 @@ public class Communicator {
     public void shutdown() {
         multicastSocket.close();
     }
-
-    // ----------------------------------------- FILE UNICAST RECEIVER -------------------------------------------------
-    //@Bean
-    //public UnicastReceivingChannelAdapter fileUnicastReceiver() {
-    //    UnicastReceivingChannelAdapter fileAdapter = new UnicastReceivingChannelAdapter(fileUnicastPort);
-    //    fileAdapter.setOutputChannelName("FileUnicast");
-    //    return fileAdapter;
-    //}
 }

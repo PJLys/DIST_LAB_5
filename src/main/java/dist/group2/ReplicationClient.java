@@ -178,13 +178,18 @@ public class ReplicationClient implements Runnable{
                     System.out.println("Change in file owner after new node joined. Send file " + file_name + " to its new owner " + file_owner);
 
                     // Replicate the file to the new owner
+                    System.out.println(1);
                     String file_path = replicated_file_path.toString() + '/' + file_name;
+                    System.out.println(2);
                     String log_file_path = log_path.toString() +  + '/' + file_name + ".log";;
                     sendFileToNode(file_path, log_file_path, file_owner, "ENTRY_CREATE");
+                    System.out.println(3);
 
                     // Delete file on this node
                     Files.deleteIfExists(Path.of(file_path));
+                    System.out.println(4);
                     Files.deleteIfExists(Path.of(log_file_path));
+                    System.out.println(5);
                 }
             }
         }
