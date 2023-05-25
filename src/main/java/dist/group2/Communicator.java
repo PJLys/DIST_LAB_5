@@ -106,10 +106,10 @@ public class Communicator {
     }
 
     // ----------------------------------------- FILE UNICAST RECEIVER -------------------------------------------------
-    @Bean
-    public UnicastReceivingChannelAdapter fileUnicastReceiver() {
-        UnicastReceivingChannelAdapter fileAdapter = new UnicastReceivingChannelAdapter(fileUnicastPort);
-        fileAdapter.setOutputChannelName("FileUnicast");
-        return fileAdapter;
-    }
+    //@Bean
+    //public UnicastReceivingChannelAdapter fileUnicastReceiver() {
+    //    UnicastReceivingChannelAdapter fileAdapter = new UnicastReceivingChannelAdapter(fileUnicastPort);
+    //    fileAdapter.setOutputChannelName("FileUnicast");
+    //    return fileAdapter;
+    //}
 }
