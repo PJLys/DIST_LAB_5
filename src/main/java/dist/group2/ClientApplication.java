@@ -38,6 +38,7 @@ public class ClientApplication {
         NamingClient.setBaseUrl(discoveryClient.getBaseUrl());
         NamingClient.setName(name);
 
+        replicationClient.createDirectories();
         replicationClient.addFiles();
         replicationClient.setFileDirectoryWatchDog();
         replicationClient.replicateFiles();

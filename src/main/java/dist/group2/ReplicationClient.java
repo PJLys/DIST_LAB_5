@@ -42,6 +42,9 @@ public class ReplicationClient implements Runnable{
 
     public ReplicationClient() throws IOException {
         // this.fileUnicastPort = 4451;
+    }
+
+    public void createDirectories() {
         createDirectory(local_file_path);
         createDirectory(replicated_file_path);
         createDirectory(log_path);
@@ -274,6 +277,7 @@ public class ReplicationClient implements Runnable{
             restTemplate.postForObject(url, requestEntity, Void.class);
         } catch (Exception e) {
             System.out.println("ERROR - posting file throws IOException");
+            System.out.println("\tRaw data received: " + e.getMessage());
             System.out.println("\tRaw data received: " + Arrays.toString(e.getStackTrace()));
         }
 
