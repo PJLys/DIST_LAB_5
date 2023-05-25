@@ -41,7 +41,7 @@ public class ReplicationClient implements Runnable{
     private final Path log_path = Path.of(new File("").getAbsolutePath().concat("/src/log_files"));  //Stores the local files that need to be replicated
 
     public ReplicationClient() throws IOException {
-        this.fileUnicastPort = 4451;
+        // this.fileUnicastPort = 4451;
         createDirectory(local_file_path);
         createDirectory(replicated_file_path);
         createDirectory(log_path);
