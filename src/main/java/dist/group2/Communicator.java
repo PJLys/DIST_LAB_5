@@ -76,7 +76,7 @@ public class Communicator {
     // -----------------------------------------------------------------------------------------------------------------
     @Bean
     public MulticastReceivingChannelAdapter multicastReceiver(DatagramSocket socket) {
-        MulticastReceivingChannelAdapter adapter = new MulticastReceivingChannelAdapter(Communicator.multicastIP, Communicator.multicastPort);
+        MulticastReceivingChannelAdapter adapter = new MulticastReceivingChannelAdapter(multicastIP, multicastPort);
         adapter.setOutputChannelName("Multicast");
         adapter.setSocket(socket);
         return adapter;
@@ -84,10 +84,10 @@ public class Communicator {
 
     @Bean
     public DatagramSocket datagramSocket() throws IOException {
-        multicastSocket = new MulticastSocket(multicastPort);
+        MulticastSocket socket = new MulticastSocket(multicastPort);
         InetAddress group = InetAddress.getByName(multicastIP);
-        multicastSocket.joinGroup(group);
-        return multicastSocket;
+        socket.joinGroup(group);
+        return socket;
     }
 
     @Bean
