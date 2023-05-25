@@ -20,6 +20,7 @@ import org.springframework.web.client.RestTemplate;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.rmi.UnexpectedException;
@@ -37,7 +38,7 @@ public class ReplicationClient implements Runnable{
     private final Path replicated_file_path = Path.of(new File("").getAbsolutePath().concat("/src/replicated_files"));  //Stores the local files that need to be replicated
     private final Path log_path = Path.of(new File("").getAbsolutePath().concat("/src/log_files"));  //Stores the local files that need to be replicated
 
-    public ReplicationClient() {}
+    public ReplicationClient() throws IOException {}
 
     public void createDirectories() {
         createDirectory(local_file_path);
