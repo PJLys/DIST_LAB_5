@@ -245,7 +245,7 @@ public class ReplicationClient implements Runnable{
             // Warn the owner of the file to delete the replicated file
             sendFileToNode(filePath, null, destinationIP, "ENTRY_DELETE");
             if (!Objects.equals(destinationIP, IPAddress)) {
-                sleep(100);
+                sleep(300);
             }
         }
 
@@ -262,7 +262,7 @@ public class ReplicationClient implements Runnable{
             // Transfer the file and its log to the previous node
             sendFileToNode(filePath, logPath, previousNodeIP, "ENTRY_SHUTDOWN_REPLICATE");
             if (!Objects.equals(previousNodeIP, IPAddress)) {
-                sleep(100);
+                sleep(300);
             }
         }
     }
