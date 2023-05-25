@@ -6,6 +6,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.Message;
+import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -14,7 +15,7 @@ import java.net.DatagramPacket;
 import java.nio.file.Path;
 import java.util.Arrays;
 
-@Service
+@Controller
 public class DiscoveryClient {
     private static int previousID;
     private int nextID;
