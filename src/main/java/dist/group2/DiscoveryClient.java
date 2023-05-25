@@ -155,7 +155,7 @@ public class DiscoveryClient {
         } else if (currentID <= newNodeID && newNodeID <= nextID) {    // Test if the new node should become the nextID of the new node
             nextID = newNodeID;
             System.out.println("<---> nextID changed - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
-            sleep(200);    // Wait so the responses don't collide
+            sleep(300);    // Wait so the responses don't collide
             respondToMulticast(newNodeIP, currentID, "previousID");
         }
     }
@@ -169,7 +169,7 @@ public class DiscoveryClient {
         System.out.println(name + " - Received multicast message from other node: " + RxData);
 
         // Wait so the new node has time to start up and the unicast answers follow the answer of the naming server
-        sleep(1000);
+        sleep(1300);
 
         // Use this multicast data to update your previous & next node IDs
         compareIDs(RxData);
