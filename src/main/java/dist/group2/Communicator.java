@@ -7,6 +7,7 @@ import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.ip.udp.MulticastReceivingChannelAdapter;
 import org.springframework.integration.ip.udp.UnicastReceivingChannelAdapter;
 import org.springframework.messaging.Message;
+import org.springframework.stereotype.Service;
 
 import java.io.DataInputStream;
 import java.io.FileOutputStream;
@@ -19,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+@Service
 public class Communicator {
     static MulticastSocket multicastSocket;
     static String multicastIP;
@@ -84,10 +86,10 @@ public class Communicator {
 
     @Bean
     public DatagramSocket datagramSocket() throws IOException {
-        MulticastSocket socket = new MulticastSocket(multicastPort);
+        multicastSocket = new MulticastSocket(multicastPort);
         InetAddress group = InetAddress.getByName(multicastIP);
-        socket.joinGroup(group);
-        return socket;
+        multicastSocket.joinGroup(group);
+        return multicastSocket;
     }
 
     @Bean
