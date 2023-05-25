@@ -143,8 +143,6 @@ public class DiscoveryClient {
         int newNodeID = hashValue(newNodeName);
         int currentID = hashValue(name);
 
-        sleep(300);    // Wait so the responses follow that of the naming server
-
         if (currentID == nextID) {    // Test if this node is alone -> change previous and next ID to the new node
             previousID = newNodeID;
             nextID = newNodeID;
@@ -170,8 +168,8 @@ public class DiscoveryClient {
         String RxData = new String(dataPacket.getData(), 0, dataPacket.getLength());
         System.out.println(name + " - Received multicast message from other node: " + RxData);
 
-        // Wait so the new node has time to start up
-        sleep(250);
+        // Wait so the new node has time to start up and the unicast answers follow the answer of the naming server
+        sleep(1000);
 
         // Use this multicast data to update your previous & next node IDs
         compareIDs(RxData);
