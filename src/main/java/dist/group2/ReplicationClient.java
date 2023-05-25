@@ -85,12 +85,13 @@ public class ReplicationClient implements Runnable{
         System.out.println("File created: "+ filepath);
         System.out.println("Sending replication request");
 
-        if (filepath.endsWith(".swp")) {
-            return 0;
-        }
 
         try {
             String filePath = local_file_path.toString() + '/' + filename;
+            
+            if (filepath.endsWith(".swp")) {
+                return 0;
+            }
 
             System.out.println(filePath);
             String replicator_loc = NamingClient.findFile(Path.of(filePath).getFileName().toString());
