@@ -29,7 +29,7 @@ import java.util.*;
 
 @Service
 public class ReplicationClient implements Runnable{
-    private final int fileUnicastPort;
+    // private final int fileUnicastPort;
     private String nodeName = InetAddress.getLocalHost().getHostName();
     private int nodeID = DiscoveryClient.hashValue(nodeName);
     private String IPAddress = InetAddress.getLocalHost().getHostAddress();
@@ -250,7 +250,10 @@ public class ReplicationClient implements Runnable{
         RestTemplate restTemplate = new RestTemplate();
 
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("file", json);
+        requestBody.put("name", json.get("name"));
+        requestBody.put("extra_message", json.get("extra_message"));
+        requestBody.put("data", json.get("data"));
+        requestBody.put("log_data", json.get("log_data"));
 
         // Specify media type
         HttpHeaders headers = new HttpHeaders();
@@ -263,7 +266,7 @@ public class ReplicationClient implements Runnable{
             restTemplate.postForObject(url, requestEntity, Void.class);
         } catch (Exception e) {
             System.out.println("ERROR - posting file throws IOException");
-            System.out.println("\tRaw data received: " + e.getStackTrace());
+            System.out.println("\tRaw data received: " + Arrays.toString(e.getStackTrace()));
         }
 
         restTemplate.postForObject(url, data, Void.class);
@@ -474,6 +477,7 @@ public class ReplicationClient implements Runnable{
         }
 
         // Loop through the files and search for the received file name
+        assert localFiles != null;
         for (File file : localFiles) {
             // Get info of the file
             String localFileName = file.getName();
@@ -489,7 +493,7 @@ public class ReplicationClient implements Runnable{
     // POST file using REST
     public void replicateFile(JSONObject file) throws IOException {
         System.out.println("Received file using REST: " + file.toString());
-        Dictionary jo = (Dictionary) file.get("file");
+        JSONObject json = file;
         //JSONObject raw_data = fileMessage.getPayload();
         //try {
         //    JSONParser parser = new JSONParser();
@@ -501,9 +505,9 @@ public class ReplicationClient implements Runnable{
         //    DiscoveryClient.failure();
         //}
 
-        String file_name = (String) jo.get("name");
-        String extra_message = (String) jo.get("extra_message");
-        String data = (String) jo.get("data");
+        String file_name = (String) json.get("name");
+        String extra_message = (String) json.get("extra_message");
+        String data = (String) json.get("data");
 
         System.out.println(file_name);
         System.out.println(extra_message);
@@ -524,7 +528,7 @@ public class ReplicationClient implements Runnable{
                 String previousNodeIP = NamingClient.getIPAddress(previousNodeID);
 
                 // Retransfer the file and its log to the previous node
-                transmitFileAsJSON(jo, previousNodeIP);
+                transmitFileAsJSON(json, previousNodeIP);
             } else {
                 // Store the replicated file
                 FileOutputStream os_file = new FileOutputStream(file_path);
@@ -534,7 +538,7 @@ public class ReplicationClient implements Runnable{
                 // Store the log of the replicated file
                 os_file = new FileOutputStream(log_file_path);
                 String update_text = date + " - Change of owner caused by shutdown.\n";
-                String log_data = (String) jo.get("log_data");
+                String log_data = (String) json.get("log_data");
                 os_file.write((log_data + update_text).getBytes());
                 os_file.close();
             }
