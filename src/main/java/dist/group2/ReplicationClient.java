@@ -238,13 +238,13 @@ public class ReplicationClient implements Runnable{
             String filePath = local_file_path.toString() + '/' + fileName;
 
             // The destination is the owner of the file instead of the previous node
-            // String destinationIP = NamingClient.findFile(fileName);
+            String destinationIP = NamingClient.findFile(fileName);
 
-            System.out.println("Send warning to delete file " + file.getName() + " to node " + previousNodeIP);
+            System.out.println("Send warning to delete file " + file.getName() + " to node " + destinationIP);
 
             // Warn the owner of the file to delete the replicated file
-            sendFileToNode(filePath, null, previousNodeIP, "ENTRY_DELETE");
-            if (!Objects.equals(previousNodeIP, IPAddress)) {
+            sendFileToNode(filePath, null, destinationIP, "ENTRY_DELETE");
+            if (!Objects.equals(destinationIP, IPAddress)) {
                 sleep(300);
             }
         }
