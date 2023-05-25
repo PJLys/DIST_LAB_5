@@ -48,13 +48,13 @@ public class ReplicationClient implements Runnable{
         return client;
     }
 
-    public void createDirectories() {
+    public void createDirectories() throws IOException {
         createDirectory(local_file_path);
         createDirectory(replicated_file_path);
         createDirectory(log_path);
     }
 
-    public void createDirectory(Path path) {
+    public void createDirectory(Path path) throws IOException {
         File directory = new File(path.toString());
 
         if (!directory.exists()) {
@@ -66,6 +66,7 @@ public class ReplicationClient implements Runnable{
             }
         } else {
             System.out.println("Directory " + directory + " already exists");
+            removeDirectory(path.toString());
         }
     }
 
@@ -120,6 +121,16 @@ public class ReplicationClient implements Runnable{
             }
             Thread.yield();
         }
+    }
+
+    public static void removeDirectory(String directoryPath) throws IOException {
+        Path path = Paths.get(directoryPath);
+
+        // Recursively delete the directory and its contents
+        Files.walk(path)
+                .sorted(java.util.Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(java.io.File::delete);
     }
 
     // Create files to store on this node
