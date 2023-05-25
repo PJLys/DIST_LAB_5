@@ -209,6 +209,9 @@ public class ReplicationClient implements Runnable{
     }
 
     public void sendFileToNode(String filePath, String logPath, String nodeIP, String extra_message) throws IOException {
+        System.out.println(filePath + "  "+ logPath + "  "+ nodeIP + "  "+ extra_message);
+
+
         // Create JSON object from File
         JSONObject jo = new JSONObject();
 
