@@ -40,11 +40,11 @@ public class ClientApplication {
 
         replicationClient.createDirectories();
         replicationClient.addFiles();
-        replicationClient.setFileDirectoryWatchDog();
+        //replicationClient.setFileDirectoryWatchDog();
         replicationClient.replicateFiles();
 
-        replicationthread = new Thread(replicationClient);
-        replicationthread.start();
+        //replicationthread = new Thread(replicationClient);
+        //replicationthread.start();
     }
 
     @PreDestroy

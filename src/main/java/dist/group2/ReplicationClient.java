@@ -342,7 +342,6 @@ public class ReplicationClient implements Runnable{
     }
 
     public void implementUpdate(JSONObject json) throws IOException {
-        System.out.println(DiscoveryClient.getPreviousID() + "  " + nodeID);
         String file_name = (String) json.get("name");
         String extra_message = (String) json.get("extra_message");
         String data = (String) json.get("data");
