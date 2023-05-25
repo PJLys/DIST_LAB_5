@@ -97,7 +97,7 @@ public class ReplicationClient implements Runnable{
                 return 0;
             }
 
-            System.out.println("Update of file detected in file with path: " + filePath + ", sending notice this to owner");
+            System.out.println("Update of file detected in file with path: " + filePath + ", sending notice to owner");
             String replicator_loc = NamingClient.findFile(Path.of(filePath).getFileName().toString());
             sendFileToNode(filePath, null, replicator_loc, event.kind().toString());
         } catch (IOException e) {
@@ -244,6 +244,7 @@ public class ReplicationClient implements Runnable{
 
             // Warn the owner of the file to delete the replicated file
             sendFileToNode(filePath, null, destinationIP, "ENTRY_DELETE");
+            sleep(50);
         }
 
         // Send the replicated files and their logs to the previous node which will become the new owner of the file.
@@ -258,6 +259,17 @@ public class ReplicationClient implements Runnable{
 
             // Transfer the file and its log to the previous node
             sendFileToNode(filePath, logPath, previousNodeIP, "ENTRY_SHUTDOWN_REPLICATE");
+            sleep(50);
+        }
+    }
+
+    public void sleep(int time) {
+        try {
+            Thread.sleep(time);
+        } catch (Exception e) {
+            System.out.println("ERROR - Sleep failed");
+            System.out.println("\tError Message: " + e.getMessage());
+            System.out.println("\tError Stack Trace: " + Arrays.toString(e.getStackTrace()));
         }
     }
 
