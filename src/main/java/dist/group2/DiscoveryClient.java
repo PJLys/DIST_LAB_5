@@ -15,7 +15,7 @@ import java.net.DatagramPacket;
 import java.nio.file.Path;
 import java.util.Arrays;
 
-@Controller
+@Service
 public class DiscoveryClient {
     private static int previousID;
     private int nextID;
@@ -162,19 +162,7 @@ public class DiscoveryClient {
         }
     }
 
-    @ServiceActivator(inputChannel = "Multicast")
-    private void multicastEvent(Message<byte[]> message) throws IOException {
-        byte[] payload = message.getPayload();
-        DatagramPacket dataPacket = new DatagramPacket(payload, payload.length);
 
-        String RxData = new String(dataPacket.getData(), 0, dataPacket.getLength());
-        System.out.println(name + " - Received multicast message from other node: " + RxData);
-
-        // Use this multicast data to update your previous & next node IDs
-        compareIDs(RxData);
-
-        ReplicationClient.getInstance().changeOwnerWhenNodeIsAdded();
-    }
 
     @ServiceActivator(inputChannel = "DiscoveryUnicast")
     private void unicastEvent(Message<byte[]> message) {
