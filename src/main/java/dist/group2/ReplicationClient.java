@@ -234,7 +234,8 @@ public class ReplicationClient implements Runnable{
         for (File file : localFiles) {
             // Get info of the file
             String fileName = file.getName();
-            String filePath = local_file_path.toString() +  + '/' + fileName;
+            System.out.println("FILENAME " + fileName);
+            String filePath = local_file_path.toString() + '/' + fileName;
 
             // The destination is the owner of the file instead of the previous node
             String destinationIP = NamingClient.findFile(fileName);
@@ -252,8 +253,8 @@ public class ReplicationClient implements Runnable{
 
             // Get info of the file
             String fileName = file.getName();
-            String filePath = replicated_file_path.toString() +  + '/' + fileName;
-            String logPath = log_path.toString() +  + '/' + fileName + ".log";
+            String filePath = replicated_file_path.toString() + '/' + fileName;
+            String logPath = log_path.toString() + '/' + fileName + ".log";
 
             // Transfer the file and its log to the previous node
             sendFileToNode(filePath, logPath, previousNodeIP, "ENTRY_SHUTDOWN_REPLICATE");
