@@ -43,7 +43,7 @@ public class NamingClient {
         String url = baseUrl + "?fileName=" + fileName;
         try {
             String IPAddress = restTemplate.getForObject(url, String.class);
-            System.out.println("<" + name + "> - " + fileName + " is stored at IPAddress " + IPAddress);
+            // System.out.println("<" + name + "> - " + fileName + " is stored at IPAddress " + IPAddress);
             return IPAddress;
         } catch (Exception e) {
             System.out.println(e.getMessage());

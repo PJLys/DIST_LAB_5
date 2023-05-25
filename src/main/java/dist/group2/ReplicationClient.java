@@ -175,21 +175,20 @@ public class ReplicationClient implements Runnable{
                 if (Objects.equals(IPAddress, file_owner)) {
                     // The new node does not become the new owner of the file
                 } else {
+                    if (file_name.endsWith(".swp")) {
+                        return;
+                    }
+
                     System.out.println("Change in file owner after new node joined. Send file " + file_name + " to its new owner " + file_owner);
 
                     // Replicate the file to the new owner
-                    System.out.println(1);
                     String file_path = replicated_file_path.toString() + '/' + file_name;
-                    System.out.println(2);
                     String log_file_path = log_path.toString() + '/' + file_name + ".log";;
                     sendFileToNode(file_path, log_file_path, file_owner, "ENTRY_CREATE");
-                    System.out.println(3);
 
                     // Delete file on this node
                     Files.deleteIfExists(Path.of(file_path));
-                    System.out.println(4);
                     Files.deleteIfExists(Path.of(log_file_path));
-                    System.out.println(5);
                 }
             }
         }
@@ -251,6 +250,10 @@ public class ReplicationClient implements Runnable{
     }
 
     public void sendFileToNode(String filePath, String logPath, String nodeIP, String extra_message) throws IOException {
+        if (filePath.endsWith(".swp")) {
+            return;
+        }
+
         System.out.println(filePath + "  " + logPath + "  " + nodeIP + "  " + extra_message);
 
         // Create JSON object from File
@@ -283,10 +286,10 @@ public class ReplicationClient implements Runnable{
 
     public void updateFile(JSONObject json, String nodeIP) throws IOException {
         if (Objects.equals(nodeIP, IPAddress)) {
-            System.out.println("Sent replicated version of file " + json.get("name") + " to node " + nodeIP + " with action " + json.get("extra_message") + " to itself");
+            System.out.println("Send replicated version of file " + json.get("name") + " with action " + json.get("extra_message") + " to itself");
             implementUpdate(json);
         } else {
-            System.out.println("Sent replicated version of file " + json.get("name") + " to node " + nodeIP + " with action " + json.get("extra_message") + " to node with IP " + nodeIP);
+            System.out.println("Send replicated version of file " + json.get("name") + " with action " + json.get("extra_message") + " to node with IP " + nodeIP);
             transmitFileAsJSON(json, nodeIP);
         }
     }
