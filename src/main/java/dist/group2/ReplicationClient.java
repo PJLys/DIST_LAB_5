@@ -86,8 +86,11 @@ public class ReplicationClient implements Runnable{
         System.out.println("Sending replication request");
         try {
             String filePath = local_file_path.toString() + '/' + filename;
+
+            System.out.println(filePath);
             String replicator_loc = NamingClient.findFile(Path.of(filePath).getFileName().toString());
             sendFileToNode(filePath, null, replicator_loc, event.kind().toString());
+            System.out.println("File change detected, sending file to owner.");
         } catch (IOException e) {
             System.out.println("Failed to send file!");
             System.out.println("\nException: \n\t");
