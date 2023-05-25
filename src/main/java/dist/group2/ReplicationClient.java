@@ -80,22 +80,17 @@ public class ReplicationClient implements Runnable{
      * @return error code
      */
     public int event_handler(WatchEvent<?> event) {
-        Path filename = (Path) event.context();
-        Path filepath = local_file_path.resolve(filename);
-        System.out.println("File created: "+ filepath);
-        System.out.println("Sending replication request");
-
         try {
+            Path filename = (Path) event.context();
             String filePath = local_file_path.toString() + '/' + filename;
 
             if (filePath.endsWith(".swp")) {
                 return 0;
             }
 
-            System.out.println(filePath);
+            System.out.println("Update of file detected in file with path: " + filePath + ", sending notice this to owner");
             String replicator_loc = NamingClient.findFile(Path.of(filePath).getFileName().toString());
             sendFileToNode(filePath, null, replicator_loc, event.kind().toString());
-            System.out.println("File change detected, sending file to owner.");
         } catch (IOException e) {
             System.out.println("ERROR - Failed to send file!");
             System.out.println("\tError Message: " + e.getMessage());
@@ -238,15 +233,15 @@ public class ReplicationClient implements Runnable{
 
     public void updateFile(JSONObject json, String nodeIP) throws IOException {
         if (Objects.equals(nodeIP, IPAddress)) {
+            System.out.println("Sent replicated version of file " + json.get("name") + " to node " + nodeIP + " with action " + json.get("extra_message") + " to itself");
             implementUpdate(json);
         } else {
+            System.out.println("Sent replicated version of file " + json.get("name") + " to node " + nodeIP + " with action " + json.get("extra_message") + " to node with IP " + nodeIP);
             transmitFileAsJSON(json, nodeIP);
         }
     }
 
     public void transmitFileAsJSON(JSONObject json, String nodeIP) {
-        System.out.println("Sent replicated version of file " + json.get("name") + " to node " + nodeIP + " with action " + json.get("extra_message"));
-
         String url = "http://" + nodeIP + ":" + 8082 + "/api/node";
         RestTemplate restTemplate = new RestTemplate();
 
