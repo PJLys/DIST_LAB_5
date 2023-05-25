@@ -85,7 +85,7 @@ public class ReplicationClient implements Runnable{
         System.out.println("File created: "+ filepath);
         System.out.println("Sending replication request");
 
-        if (filename.endsWith(".swp")) {
+        if (filepath.endsWith(".swp")) {
             return 0;
         }
 
