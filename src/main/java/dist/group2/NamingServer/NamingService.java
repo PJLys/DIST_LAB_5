@@ -51,10 +51,15 @@ public class NamingService {
         Map<String, String> node = new HashMap<>();
         node.put("nodeName", nodeName);
         node.put("IPAddress", IPAddress);
-        addNode(node);
+        try {
+            // Try to add the node, gives exception when a hash collision occurs
+            addNode(node);
 
-        // Respond to Multicast
-        respondToMulticast(IPAddress);
+            // Respond to Multicast (only when the hash of the node is not already in the database)
+            respondToMulticast(IPAddress);
+        } catch(IllegalStateException e) {
+            System.out.println("Stop adding this node's hash to the database due to a collision.");
+        }
     }
 
     @Autowired
