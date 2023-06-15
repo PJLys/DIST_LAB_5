@@ -143,7 +143,9 @@ public class DiscoveryClient {
         int newNodeID = hashValue(newNodeName);
         int currentID = hashValue(name);
 
-        if (currentID == nextID) {    // Test if this node is alone -> change previous and next ID to the new node
+        if (newNodeID == previousID || newNodeID == nextID || newNodeID == currentID) {    // Duplicate node -> don't add to ring structure
+            System.out.println("<---> New node tried to enter the network with the hash " + newNodeID + " which is already in use <--->");
+        } else if (currentID == nextID) {    // Test if this node is alone -> change previous and next ID to the new node
             previousID = newNodeID;
             nextID = newNodeID;
             System.out.println("<---> connected to first other node - previousID: " + previousID + ", thisID: " + hashValue(name) + ", nextID: " + nextID + " <--->");
